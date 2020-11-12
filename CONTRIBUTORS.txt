@@ -12,6 +12,7 @@ needs to be listed here.
 ### Contributors
 
 - Konrad `ktoso` Malawski <konrad_malawski@apple.com>
+- MrLotU <j.koopman@jarict.nl>
 
 **Updating this list**
 
