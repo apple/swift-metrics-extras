@@ -36,7 +36,7 @@ def header(fileName)
 //
 // This source file is part of the Swift Metrics API open source project
 //
-// Copyright (c) 2018-2019 Apple Inc. and the Swift Metrics API project authors
+// Copyright (c) 2018-2020 Apple Inc. and the Swift Metrics API project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
