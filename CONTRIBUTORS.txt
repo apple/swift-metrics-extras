@@ -11,10 +11,8 @@ needs to be listed here.
 
 ### Contributors
 
-- Cory Benfield <lukasa@apple.com>
-- Jari (LotU) <j.koopman@jarict.nl>
-- Konrad `ktoso` Malawski <ktoso@apple.com>
-- tomer doron <tomer@apple.com>
+- Konrad `ktoso` Malawski <konrad_malawski@apple.com>
+- MrLotU <j.koopman@jarict.nl>
 
 **Updating this list**
 

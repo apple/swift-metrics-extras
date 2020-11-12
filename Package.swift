@@ -16,14 +16,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "swift-metrics",
+    name: "swift-metrics-extras",
     products: [
         .library(name: "SystemMetrics", targets: ["SystemMetrics"]),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
     ],
     targets: [
         .target(
             name: "SystemMetrics",
-            dependencies: []
+            dependencies: ["CoreMetrics"]
         ),
         .testTarget(
             name: "SystemMetricsTests",
