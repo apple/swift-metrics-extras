@@ -22,7 +22,7 @@ or other such metric system agnostic metrics additions–such additions are perf
 To add a dependency on the extras package, you need to declare it in your `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/apple/swift-metrics-metrics.git", "1.0.0" ..< "3.0.0"),
+.package(url: "https://github.com/apple/swift-metrics-extras.git", "1.0.0" ..< "2.0.0"),
 ```
 
 and to your application/library target, add the specific module you would like to depend on to your dependencies:
