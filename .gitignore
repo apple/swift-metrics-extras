@@ -7,3 +7,4 @@
 *.orig
 .swiftpm
 .idea
+Package.resolved
