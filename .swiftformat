@@ -9,5 +9,7 @@
 --patternlet inline
 --stripunusedargs unnamed-only
 --ifdef no-indent
+--extensionacl on-declarations
+--disable typeSugar
 
 # rules

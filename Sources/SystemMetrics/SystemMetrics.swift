@@ -335,8 +335,8 @@ public enum SystemMetrics {
     }
 }
 
-private extension Array where Element == String {
-    subscript(safe index: Int) -> String {
+extension Array where Element == String {
+    fileprivate subscript(safe index: Int) -> String {
         guard index >= 0, index < endIndex else {
             return ""
         }
