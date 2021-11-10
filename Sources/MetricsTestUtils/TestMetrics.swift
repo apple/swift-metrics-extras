@@ -1,38 +1,25 @@
 //===----------------------------------------------------------------------===//
 //
-// This source file is part of the Swift Cluster Membership open source project
-//
-// Copyright (c) 2020 Apple Inc. and the Swift Cluster Membership project authors
-// Licensed under Apache License v2.0
-//
-// See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of Swift Cluster Membership project authors
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
-//===----------------------------------------------------------------------===//
-//
-// This source file is part of the Swift Cluster Membership open source project
-//
-// Copyright (c) 2020 Apple Inc. and the Swift Cluster Membership project authors
-// Licensed under Apache License v2.0
-//
-// See LICENSE.txt for license information
-// See CONTRIBUTORS.md for the list of Swift Cluster Membership project authors
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-//===----------------------------------------------------------------------===//
-//===----------------------------------------------------------------------===//
-//
 // This source file is part of the Swift Metrics API open source project
 //
-// Copyright (c) 2018-2019 Apple Inc. and the Swift Metrics API project authors
+// Copyright (c) 2021 Apple Inc. and the Swift Metrics API project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
 // See CONTRIBUTORS.txt for the list of Swift Metrics API project authors
+//
+// SPDX-License-Identifier: Apache-2.0
+//
+//===----------------------------------------------------------------------===//
+//===----------------------------------------------------------------------===//
+//
+// This source file is part of the Swift Cluster Membership open source project
+//
+// Copyright (c) 2020 Apple Inc. and the Swift Cluster Membership project authors
+// Licensed under Apache License v2.0
+//
+// See LICENSE.txt for license information
+// See CONTRIBUTORS.md for the list of Swift Cluster Membership project authors
 //
 // SPDX-License-Identifier: Apache-2.0
 //
@@ -47,6 +34,9 @@ import XCTest
 ///
 /// Metrics factory which allows inspecting recorded metrics programmatically.
 /// Only intended for tests of the Metrics API itself.
+///
+/// Created Handlers will store Metrics until they are explicitly destroyed.
+/// 
 public final class TestMetrics: MetricsFactory {
     private let lock = NSLock()
 
@@ -129,7 +119,10 @@ extension TestMetrics {
     // ==== ------------------------------------------------------------------------------------------------------------
     // MARK: Counter
     public func expectCounter(_ metric: Counter) throws -> TestCounter {
-        metric.handler as! TestCounter
+        guard let counter = metric.handler as? TestCounter else {
+            throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestCounter.self)")
+        }
+        return counter
     }
 
     public func expectCounter(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestCounter {
@@ -160,7 +153,10 @@ extension TestMetrics {
     // ==== ------------------------------------------------------------------------------------------------------------
     // MARK: Recorder
     public func expectRecorder(_ metric: Recorder) throws -> TestRecorder {
-        metric.handler as! TestRecorder
+        guard let recorder = metric.handler as? TestRecorder else {
+            throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestRecorder.self)")
+        }
+        return recorder
     }
 
     public func expectRecorder(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestRecorder {
@@ -177,7 +173,10 @@ extension TestMetrics {
     // ==== ------------------------------------------------------------------------------------------------------------
     // MARK: Timer
     public func expectTimer(_ metric: Timer) throws -> TestTimer {
-        metric.handler as! TestTimer
+        guard let timer = metric.handler as? TestTimer else {
+            throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestTimer.self)")
+        }
+        return timer
     }
 
     public func expectTimer(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestTimer {
@@ -225,14 +224,12 @@ public final class TestCounter: TestMetric, CounterHandler, Equatable {
         self.lock.withLock {
             self.values.append((Date(), amount))
         }
-        print("adding \(amount) to \(self.label)\(self.dimensions.map { "\($0):\($1)" })")
     }
 
     public func reset() {
         self.lock.withLock {
             self.values = []
         }
-        print("resetting \(self.label)")
     }
 
     public var lastValue: Int64? {
@@ -287,7 +284,6 @@ public final class TestRecorder: TestMetric, RecorderHandler, Equatable {
             // this may loose precision but good enough as an example
             values.append((Date(), Double(value)))
         }
-        print("recording \(value) in \(self.label)\(self.dimensions.map { "\($0):\($1)" })")
     }
 
     public var lastValue: Double? {
@@ -347,7 +343,6 @@ public final class TestTimer: TestMetric, TimerHandler, Equatable {
         self.lock.withLock {
             _values.append((Date(), duration))
         }
-        print("recording \(duration) in \(self.label)\(self.dimensions.map { "\($0):\($1)" })")
     }
 
     public var lastValue: Int64? {
