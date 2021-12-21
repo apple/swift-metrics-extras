@@ -57,7 +57,7 @@ public final class TestMetrics: MetricsFactory {
     }
 
     public func makeCounter(label: String, dimensions: [(String, String)]) -> CounterHandler {
-        self.make(label: label, dimensions: dimensions, registry: &self.counters, maker: TestCounter.init)
+        return self.make(label: label, dimensions: dimensions, registry: &self.counters, maker: TestCounter.init)
     }
 
     public func makeRecorder(label: String, dimensions: [(String, String)], aggregate: Bool) -> RecorderHandler {
@@ -68,11 +68,11 @@ public final class TestMetrics: MetricsFactory {
     }
 
     public func makeTimer(label: String, dimensions: [(String, String)]) -> TimerHandler {
-        self.make(label: label, dimensions: dimensions, registry: &self.timers, maker: TestTimer.init)
+        return self.make(label: label, dimensions: dimensions, registry: &self.timers, maker: TestTimer.init)
     }
 
     private func make<Item>(label: String, dimensions: [(String, String)], registry: inout [FullKey: Item], maker: (String, [(String, String)]) -> Item) -> Item {
-        self.lock.withLock {
+        return self.lock.withLock { () -> Item in
             let item = maker(label, dimensions)
             registry[.init(label: label, dimensions: dimensions)] = item
             return item
@@ -107,8 +107,8 @@ extension TestMetrics.FullKey: Hashable {
         }
     }
 
-    public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.label == rhs.label &&
+    public static func == (lhs: TestMetrics.FullKey, rhs: TestMetrics.FullKey) -> Bool {
+        return lhs.label == rhs.label &&
             Dictionary(uniqueKeysWithValues: lhs.dimensions) == Dictionary(uniqueKeysWithValues: rhs.dimensions)
     }
 }
@@ -149,11 +149,11 @@ extension TestMetrics {
     // MARK: Gauge
 
     public func expectGauge(_ metric: Gauge) throws -> TestRecorder {
-        try self.expectRecorder(metric)
+        return try self.expectRecorder(metric)
     }
 
     public func expectGauge(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestRecorder {
-        try self.expectRecorder(label, dimensions)
+        return try self.expectRecorder(label, dimensions)
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
@@ -220,7 +220,7 @@ public final class TestCounter: TestMetric, CounterHandler, Equatable {
     public let dimensions: [(String, String)]
 
     public var key: TestMetrics.FullKey {
-        .init(label: self.label, dimensions: self.dimensions)
+        return TestMetrics.FullKey(label: self.label, dimensions: self.dimensions)
     }
 
     let lock = NSLock()
@@ -239,31 +239,31 @@ public final class TestCounter: TestMetric, CounterHandler, Equatable {
     }
 
     public func reset() {
-        self.lock.withLock {
+        return self.lock.withLock {
             self.values = []
         }
     }
 
     public var lastValue: Int64? {
-        self.lock.withLock {
-            values.last?.1
+        return self.lock.withLock {
+            return values.last?.1
         }
     }
 
     public var totalValue: Int64 {
-        self.lock.withLock {
-            values.map { $0.1 }.reduce(0, +)
+        return self.lock.withLock {
+            return values.map { $0.1 }.reduce(0, +)
         }
     }
 
     public var last: (Date, Int64)? {
-        self.lock.withLock {
+        return self.lock.withLock {
             values.last
         }
     }
 
     public static func == (lhs: TestCounter, rhs: TestCounter) -> Bool {
-        lhs.id == rhs.id
+        return lhs.id == rhs.id
     }
 }
 
@@ -274,7 +274,7 @@ public final class TestRecorder: TestMetric, RecorderHandler, Equatable {
     public let aggregate: Bool
 
     public var key: TestMetrics.FullKey {
-        .init(label: self.label, dimensions: self.dimensions)
+        return TestMetrics.FullKey(label: self.label, dimensions: self.dimensions)
     }
 
     let lock = NSLock()
@@ -299,19 +299,19 @@ public final class TestRecorder: TestMetric, RecorderHandler, Equatable {
     }
 
     public var lastValue: Double? {
-        self.lock.withLock {
+        return self.lock.withLock {
             values.last?.1
         }
     }
 
     public var last: (Date, Double)? {
-        self.lock.withLock {
+        return self.lock.withLock {
             values.last
         }
     }
 
     public static func == (lhs: TestRecorder, rhs: TestRecorder) -> Bool {
-        lhs.id == rhs.id
+        return lhs.id == rhs.id
     }
 }
 
@@ -322,7 +322,7 @@ public final class TestTimer: TestMetric, TimerHandler, Equatable {
     public let dimensions: [(String, String)]
 
     public var key: TestMetrics.FullKey {
-        .init(label: self.label, dimensions: self.dimensions)
+        return TestMetrics.FullKey(label: self.label, dimensions: self.dimensions)
     }
 
     let lock = NSLock()
@@ -342,7 +342,7 @@ public final class TestTimer: TestMetric, TimerHandler, Equatable {
     }
 
     func retrieveValueInPreferredUnit(atIndex i: Int) -> Double {
-        self.lock.withLock {
+        return self.lock.withLock {
             let value = _values[i].1
             guard let displayUnit = self.displayUnit else {
                 return Double(value)
@@ -358,25 +358,25 @@ public final class TestTimer: TestMetric, TimerHandler, Equatable {
     }
 
     public var lastValue: Int64? {
-        self.lock.withLock {
-            _values.last?.1
+        return self.lock.withLock {
+            return _values.last?.1
         }
     }
 
     public var values: [Int64] {
-        self.lock.withLock {
-            _values.map { $0.1 }
+        return self.lock.withLock {
+            return _values.map { $0.1 }
         }
     }
 
     public var last: (Date, Int64)? {
-        self.lock.withLock {
-            _values.last
+        return self.lock.withLock {
+            return _values.last
         }
     }
 
     public static func == (lhs: TestTimer, rhs: TestTimer) -> Bool {
-        lhs.id == rhs.id
+        return lhs.id == rhs.id
     }
 }
 
