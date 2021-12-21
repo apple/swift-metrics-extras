@@ -36,7 +36,7 @@ import XCTest
 /// Only intended for tests of the Metrics API itself.
 ///
 /// Created Handlers will store Metrics until they are explicitly destroyed.
-/// 
+///
 public final class TestMetrics: MetricsFactory {
     private let lock = NSLock()
 
@@ -114,10 +114,14 @@ extension TestMetrics.FullKey: Hashable {
 }
 
 // ==== ----------------------------------------------------------------------------------------------------------------
+
 // MARK: Assertions
+
 extension TestMetrics {
     // ==== ------------------------------------------------------------------------------------------------------------
+
     // MARK: Counter
+
     public func expectCounter(_ metric: Counter) throws -> TestCounter {
         guard let counter = metric.handler as? TestCounter else {
             throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestCounter.self)")
@@ -141,7 +145,9 @@ extension TestMetrics {
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
+
     // MARK: Gauge
+
     public func expectGauge(_ metric: Gauge) throws -> TestRecorder {
         try self.expectRecorder(metric)
     }
@@ -151,7 +157,9 @@ extension TestMetrics {
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
+
     // MARK: Recorder
+
     public func expectRecorder(_ metric: Recorder) throws -> TestRecorder {
         guard let recorder = metric.handler as? TestRecorder else {
             throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestRecorder.self)")
@@ -171,7 +179,9 @@ extension TestMetrics {
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
+
     // MARK: Timer
+
     public func expectTimer(_ metric: Timer) throws -> TestTimer {
         guard let timer = metric.handler as? TestTimer else {
             throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestTimer.self)")
@@ -192,7 +202,9 @@ extension TestMetrics {
 }
 
 // ==== ----------------------------------------------------------------------------------------------------------------
+
 // MARK: Metric type implementations
+
 public protocol TestMetric {
     associatedtype Value
 
@@ -368,8 +380,8 @@ public final class TestTimer: TestMetric, TimerHandler, Equatable {
     }
 }
 
-private extension NSLock {
-    func withLock<T>(_ body: () -> T) -> T {
+extension NSLock {
+    fileprivate func withLock<T>(_ body: () -> T) -> T {
         self.lock()
         defer {
             self.unlock()
@@ -379,7 +391,9 @@ private extension NSLock {
 }
 
 // ==== ----------------------------------------------------------------------------------------------------------------
+
 // MARK: Errors
+
 public enum TestMetricsError: Error {
     case missingMetric(label: String, dimensions: [(String, String)])
     case illegalMetricType(metric: Any, expected: String)
