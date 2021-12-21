@@ -182,7 +182,7 @@ extension TestMetrics {
 
     // MARK: Timer
 
-    public func expectTimer(_ metric: Timer) throws -> TestTimer {
+    public func expectTimer(_ metric: CoreMetrics.Timer) throws -> TestTimer {
         guard let timer = metric.handler as? TestTimer else {
             throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestTimer.self)")
         }
