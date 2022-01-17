@@ -26,7 +26,7 @@
 //===----------------------------------------------------------------------===//
 
 @testable import CoreMetrics
-@testable import Metrics
+import Metrics
 import XCTest
 
 /// Taken directly from `swift-cluster-memberships`'s own test target package, which
@@ -57,43 +57,50 @@ public final class TestMetrics: MetricsFactory {
     }
 
     public func makeCounter(label: String, dimensions: [(String, String)]) -> CounterHandler {
-        return self.make(label: label, dimensions: dimensions, registry: &self.counters, maker: TestCounter.init)
+        return self.lock.withLock { () -> TestCounter in
+            let item = TestCounter(label: label, dimensions: dimensions)
+            self.counters[.init(label: label, dimensions: dimensions)] = item
+            return item
+        }
     }
 
     public func makeRecorder(label: String, dimensions: [(String, String)], aggregate: Bool) -> RecorderHandler {
-        let maker = { (label: String, dimensions: [(String, String)]) -> RecorderHandler in
-            TestRecorder(label: label, dimensions: dimensions, aggregate: aggregate)
+        return self.lock.withLock { () -> TestRecorder in
+            let item = TestRecorder(label: label, dimensions: dimensions, aggregate: aggregate)
+            self.recorders[.init(label: label, dimensions: dimensions)] = item
+            return item
         }
-        return self.make(label: label, dimensions: dimensions, registry: &self.recorders, maker: maker)
     }
 
     public func makeTimer(label: String, dimensions: [(String, String)]) -> TimerHandler {
-        return self.make(label: label, dimensions: dimensions, registry: &self.timers, maker: TestTimer.init)
-    }
-
-    private func make<Item>(label: String, dimensions: [(String, String)], registry: inout [FullKey: Item], maker: (String, [(String, String)]) -> Item) -> Item {
-        return self.lock.withLock { () -> Item in
-            let item = maker(label, dimensions)
-            registry[.init(label: label, dimensions: dimensions)] = item
+        return self.lock.withLock { () -> TestTimer in
+            let item = TestTimer(label: label, dimensions: dimensions)
+            self.timers[.init(label: label, dimensions: dimensions)] = item
             return item
         }
     }
 
     public func destroyCounter(_ handler: CounterHandler) {
         if let testCounter = handler as? TestCounter {
-            self.counters.removeValue(forKey: testCounter.key)
+            self.lock.withLock { () -> Void in
+                self.counters.removeValue(forKey: testCounter.key)
+            }
         }
     }
 
     public func destroyRecorder(_ handler: RecorderHandler) {
         if let testRecorder = handler as? TestRecorder {
-            self.recorders.removeValue(forKey: testRecorder.key)
+            self.lock.withLock { () -> Void in
+                self.recorders.removeValue(forKey: testRecorder.key)
+            }
         }
     }
 
     public func destroyTimer(_ handler: TimerHandler) {
         if let testTimer = handler as? TestTimer {
-            self.timers.removeValue(forKey: testTimer.key)
+            self.lock.withLock { () -> Void in
+                self.timers.removeValue(forKey: testTimer.key)
+            }
         }
     }
 }
@@ -130,17 +137,15 @@ extension TestMetrics {
     }
 
     public func expectCounter(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestCounter {
-        let counter: CounterHandler
-        if let c: CounterHandler = self.counters[.init(label: label, dimensions: dimensions)] {
-            counter = c
-        } else {
-            throw TestMetricsError.missingMetric(label: label, dimensions: [])
+        let maybeItem = self.lock.withLock {
+            self.counters[.init(label: label, dimensions: dimensions)]
         }
-
-        guard let testCounter = counter as? TestCounter else {
-            throw TestMetricsError.illegalMetricType(metric: counter, expected: "\(TestCounter.self)")
+        guard let maybeCounter = maybeItem else {
+            throw TestMetricsError.missingMetric(label: label, dimensions: dimensions)
         }
-
+        guard let testCounter = maybeCounter as? TestCounter else {
+            throw TestMetricsError.illegalMetricType(metric: maybeCounter, expected: "\(TestCounter.self)")
+        }
         return testCounter
     }
 
@@ -168,13 +173,15 @@ extension TestMetrics {
     }
 
     public func expectRecorder(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestRecorder {
-        guard let counter = self.recorders[.init(label: label, dimensions: dimensions)] else {
-            throw TestMetricsError.missingMetric(label: label, dimensions: [])
+        let maybeItem = self.lock.withLock {
+            self.recorders[.init(label: label, dimensions: dimensions)]
         }
-        guard let testRecorder = counter as? TestRecorder else {
-            throw TestMetricsError.illegalMetricType(metric: counter, expected: "\(TestRecorder.self)")
+        guard let maybeRecorder = maybeItem else {
+            throw TestMetricsError.missingMetric(label: label, dimensions: dimensions)
         }
-
+        guard let testRecorder = maybeRecorder as? TestRecorder else {
+            throw TestMetricsError.illegalMetricType(metric: maybeRecorder, expected: "\(TestRecorder.self)")
+        }
         return testRecorder
     }
 
@@ -190,13 +197,15 @@ extension TestMetrics {
     }
 
     public func expectTimer(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestTimer {
-        guard let counter = self.timers[.init(label: label, dimensions: dimensions)] else {
-            throw TestMetricsError.missingMetric(label: label, dimensions: [])
+        let maybeItem = self.lock.withLock {
+            self.timers[.init(label: label, dimensions: dimensions)]
         }
-        guard let testTimer = counter as? TestTimer else {
-            throw TestMetricsError.illegalMetricType(metric: counter, expected: "\(TestTimer.self)")
+        guard let maybeTimer = maybeItem else {
+            throw TestMetricsError.missingMetric(label: label, dimensions: dimensions)
         }
-
+        guard let testTimer = maybeTimer as? TestTimer else {
+            throw TestMetricsError.illegalMetricType(metric: maybeTimer, expected: "\(TestTimer.self)")
+        }
         return testTimer
     }
 }
