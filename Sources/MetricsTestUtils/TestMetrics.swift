@@ -56,8 +56,21 @@ public final class TestMetrics: MetricsFactory {
         // nothing to do
     }
 
+    /// Reset method to destroy all created ``TestCounter``, ``TestRecorder`` and ``TestTimer``.
+    /// Invoke this method in between test runs to verify that Counters are created as needed.
+    public func reset() {
+        self.lock.withLock {
+            self.counters = [:]
+            self.recorders = [:]
+            self.timers = [:]
+        }
+    }
+
     public func makeCounter(label: String, dimensions: [(String, String)]) -> CounterHandler {
-        return self.lock.withLock { () -> TestCounter in
+        return self.lock.withLock { () -> CounterHandler in
+            if let existing = self.counters[.init(label: label, dimensions: dimensions)] {
+                return existing
+            }
             let item = TestCounter(label: label, dimensions: dimensions)
             self.counters[.init(label: label, dimensions: dimensions)] = item
             return item
@@ -65,7 +78,10 @@ public final class TestMetrics: MetricsFactory {
     }
 
     public func makeRecorder(label: String, dimensions: [(String, String)], aggregate: Bool) -> RecorderHandler {
-        return self.lock.withLock { () -> TestRecorder in
+        return self.lock.withLock { () -> RecorderHandler in
+            if let existing = self.recorders[.init(label: label, dimensions: dimensions)] {
+                return existing
+            }
             let item = TestRecorder(label: label, dimensions: dimensions, aggregate: aggregate)
             self.recorders[.init(label: label, dimensions: dimensions)] = item
             return item
@@ -73,7 +89,10 @@ public final class TestMetrics: MetricsFactory {
     }
 
     public func makeTimer(label: String, dimensions: [(String, String)]) -> TimerHandler {
-        return self.lock.withLock { () -> TestTimer in
+        return self.lock.withLock { () -> TimerHandler in
+            if let existing = self.timers[.init(label: label, dimensions: dimensions)] {
+                return existing
+            }
             let item = TestTimer(label: label, dimensions: dimensions)
             self.timers[.init(label: label, dimensions: dimensions)] = item
             return item
