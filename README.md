@@ -36,7 +36,7 @@ and to your application/library target, add the specific module you would like t
 Swift Metrics Extras ships the following extra modules:
 
 - [System Metrics](Sources/SystemMetrics)
-- ...
+- [MetricsTestUtils]((Sources/MetricsTestUtils)
 
 ### System Metrics
 
