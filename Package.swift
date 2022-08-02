@@ -22,7 +22,7 @@ let package = Package(
         .library(name: "MetricsTestUtils", targets: ["MetricsTestUtils"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.1.1"),
+        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2"),
     ],
     targets: [
         .target(

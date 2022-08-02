@@ -149,8 +149,8 @@ extension TestMetrics {
     // MARK: Counter
 
     public func expectCounter(_ metric: Counter) throws -> TestCounter {
-        guard let counter = metric.handler as? TestCounter else {
-            throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestCounter.self)")
+        guard let counter = metric._handler as? TestCounter else {
+            throw TestMetricsError.illegalMetricType(metric: metric._handler, expected: "\(TestCounter.self)")
         }
         return counter
     }
@@ -185,8 +185,8 @@ extension TestMetrics {
     // MARK: Recorder
 
     public func expectRecorder(_ metric: Recorder) throws -> TestRecorder {
-        guard let recorder = metric.handler as? TestRecorder else {
-            throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestRecorder.self)")
+        guard let recorder = metric._handler as? TestRecorder else {
+            throw TestMetricsError.illegalMetricType(metric: metric._handler, expected: "\(TestRecorder.self)")
         }
         return recorder
     }
@@ -209,8 +209,8 @@ extension TestMetrics {
     // MARK: Timer
 
     public func expectTimer(_ metric: CoreMetrics.Timer) throws -> TestTimer {
-        guard let timer = metric.handler as? TestTimer else {
-            throw TestMetricsError.illegalMetricType(metric: metric.handler, expected: "\(TestTimer.self)")
+        guard let timer = metric._handler as? TestTimer else {
+            throw TestMetricsError.illegalMetricType(metric: metric._handler, expected: "\(TestTimer.self)")
         }
         return timer
     }
