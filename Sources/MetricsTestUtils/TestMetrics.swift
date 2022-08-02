@@ -29,14 +29,12 @@
 import Metrics
 import XCTest
 
-/// Taken directly from `swift-cluster-memberships`'s own test target package, which
-/// adopts the `TestMetrics` from `swift-metrics`.
+/// A custom `Metrics/MetricsFactory` that allows for later retrieval and
+/// testing of created metrics objects.
 ///
-/// Metrics factory which allows inspecting recorded metrics programmatically.
-/// Only intended for tests of the Metrics API itself.
+/// Created handlers will store Metrics until they are explicitly destroyed.
 ///
-/// Created Handlers will store Metrics until they are explicitly destroyed.
-///
+/// > Note: Original implementation taken from `swift-cluster-membership` and `swift-distributed-actors`.
 public final class TestMetrics: MetricsFactory {
     private let lock = NSLock()
 
@@ -145,9 +143,9 @@ extension TestMetrics.FullKey: Hashable {
 
 extension TestMetrics {
     // ==== ------------------------------------------------------------------------------------------------------------
-
     // MARK: Counter
 
+    /// Assert that the passed in `metric` is a ``TestCounter`` and return it for further executing assertions.
     public func expectCounter(_ metric: Counter) throws -> TestCounter {
         guard let counter = metric._handler as? TestCounter else {
             throw TestMetricsError.illegalMetricType(metric: metric._handler, expected: "\(TestCounter.self)")
@@ -155,6 +153,13 @@ extension TestMetrics {
         return counter
     }
 
+    /// Locate a ``TestCounter`` created by the ``TestMetrics`` factory identified by the passed in ``label`` and ``dimensions``, and return it for further executing assertions.
+    ///
+    /// - Parameters:
+    ///   - label: the expected label the looked for metric should have
+    ///   - dimensions: the expected dimensions the looked for metric should have
+    /// - Returns: the underlying ``TestCounter``
+    /// - Throws: when no such test metric was present
     public func expectCounter(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestCounter {
         let maybeItem = self.lock.withLock {
             self.counters[.init(label: label, dimensions: dimensions)]
@@ -169,21 +174,27 @@ extension TestMetrics {
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
-
     // MARK: Gauge
 
+    /// Assert that the passed in `metric` is a ``TestRecorder`` and return it for further executing assertions.
     public func expectGauge(_ metric: Gauge) throws -> TestRecorder {
         return try self.expectRecorder(metric)
     }
-
+    /// Locate a ``TestRecorder`` created by the ``TestMetrics`` factory identified by the passed in ``label`` and ``dimensions``, and return it for further executing assertions.
+    ///
+    /// - Parameters:
+    ///   - label: the expected label the looked for metric should have
+    ///   - dimensions: the expected dimensions the looked for metric should have
+    /// - Returns: the underlying ``TestRecorder``
+    /// - Throws: when no such test metric was present
     public func expectGauge(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestRecorder {
         return try self.expectRecorder(label, dimensions)
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
-
     // MARK: Recorder
 
+    /// Assert that the passed in `metric` is a ``TestRecorder`` and return it for further executing assertions.
     public func expectRecorder(_ metric: Recorder) throws -> TestRecorder {
         guard let recorder = metric._handler as? TestRecorder else {
             throw TestMetricsError.illegalMetricType(metric: metric._handler, expected: "\(TestRecorder.self)")
@@ -191,6 +202,13 @@ extension TestMetrics {
         return recorder
     }
 
+    /// Locate a ``TestRecorder`` created by the ``TestMetrics`` factory identified by the passed in ``label`` and ``dimensions``, and return it for further executing assertions.
+    ///
+    /// - Parameters:
+    ///   - label: the expected label the looked for metric should have
+    ///   - dimensions: the expected dimensions the looked for metric should have
+    /// - Returns: the underlying ``TestRecorder``
+    /// - Throws: when no such test metric was present
     public func expectRecorder(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestRecorder {
         let maybeItem = self.lock.withLock {
             self.recorders[.init(label: label, dimensions: dimensions)]
@@ -205,9 +223,9 @@ extension TestMetrics {
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
-
     // MARK: Timer
 
+    /// Assert that the passed in `metric` is a ``TestTimer`` and return it for further executing assertions.
     public func expectTimer(_ metric: CoreMetrics.Timer) throws -> TestTimer {
         guard let timer = metric._handler as? TestTimer else {
             throw TestMetricsError.illegalMetricType(metric: metric._handler, expected: "\(TestTimer.self)")
@@ -215,6 +233,13 @@ extension TestMetrics {
         return timer
     }
 
+    /// Locate a ``TestTimer`` created by the ``TestMetrics`` factory identified by the passed in ``label`` and ``dimensions``, and return it for further executing assertions.
+    ///
+    /// - Parameters:
+    ///   - label: the expected label the looked for metric should have
+    ///   - dimensions: the expected dimensions the looked for metric should have
+    /// - Returns: the underlying ``TestTimer``
+    /// - Throws: when no such test metric was present
     public func expectTimer(_ label: String, _ dimensions: [(String, String)] = []) throws -> TestTimer {
         let maybeItem = self.lock.withLock {
             self.timers[.init(label: label, dimensions: dimensions)]
@@ -233,12 +258,18 @@ extension TestMetrics {
 
 // MARK: Metric type implementations
 
+/// Common protocol for all test metrics, created by the ``TestMetrics`` metrics backend.
 public protocol TestMetric {
     associatedtype Value
 
+    /// Key used to identify a metric.
     var key: TestMetrics.FullKey { get }
 
+    /// Last metric value that was recorded into this metric.
     var lastValue: Value? { get }
+
+    /// Sequence of pairs of values reported into this metric, as well as the `Date` at which the metric was emitted.
+    /// The sequence is ordered from oldest to latest, so you can e.g. assert a counter growing at an expected rate etc.
     var last: (Date, Value)? { get }
 }
 
