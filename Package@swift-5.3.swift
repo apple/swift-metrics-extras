@@ -1,4 +1,4 @@
-// swift-tools-version:5.6
+// swift-tools-version:5.3
 //===----------------------------------------------------------------------===//
 //
 // This source file is part of the Swift Metrics API open source project
@@ -23,9 +23,6 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2"),
-
-        // ~~~ SwiftPM Plugins ~~~
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
     ],
     targets: [
         .target(
