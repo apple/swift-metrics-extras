@@ -1,13 +1,13 @@
 #!/bin/bash
 ##===----------------------------------------------------------------------===##
 ##
-## This source file is part of the Swift Metrics open source project
+## This source file is part of the Swift Metrics API open source project
 ##
-## Copyright (c) 2018-2019 Apple Inc. and the Swift Metrics project authors
+## Copyright (c) 2018-2019 Apple Inc. and the Swift Metrics API project authors
 ## Licensed under Apache License v2.0
 ##
 ## See LICENSE.txt for license information
-## See CONTRIBUTORS.md for the list of Swift Metrics project authors
+## See CONTRIBUTORS.txt for the list of Swift Metrics API project authors
 ##
 ## SPDX-License-Identifier: Apache-2.0
 ##
