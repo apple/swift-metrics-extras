@@ -143,6 +143,7 @@ extension TestMetrics.FullKey: Hashable {
 
 extension TestMetrics {
     // ==== ------------------------------------------------------------------------------------------------------------
+
     // MARK: Counter
 
     /// Assert that the passed in `metric` is a ``TestCounter`` and return it for further executing assertions.
@@ -174,12 +175,14 @@ extension TestMetrics {
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
+
     // MARK: Gauge
 
     /// Assert that the passed in `metric` is a ``TestRecorder`` and return it for further executing assertions.
     public func expectGauge(_ metric: Gauge) throws -> TestRecorder {
         return try self.expectRecorder(metric)
     }
+
     /// Locate a ``TestRecorder`` created by the ``TestMetrics`` factory identified by the passed in ``label`` and ``dimensions``, and return it for further executing assertions.
     ///
     /// - Parameters:
@@ -192,6 +195,7 @@ extension TestMetrics {
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
+
     // MARK: Recorder
 
     /// Assert that the passed in `metric` is a ``TestRecorder`` and return it for further executing assertions.
@@ -223,6 +227,7 @@ extension TestMetrics {
     }
 
     // ==== ------------------------------------------------------------------------------------------------------------
+
     // MARK: Timer
 
     /// Assert that the passed in `metric` is a ``TestTimer`` and return it for further executing assertions.
