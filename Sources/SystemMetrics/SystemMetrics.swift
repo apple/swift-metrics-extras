@@ -51,22 +51,23 @@ extension MetricsSystem {
         fileprivate let timeInterval: DispatchTimeInterval
         fileprivate let dataProvider: SystemMetrics.DataProvider
         fileprivate let labels: SystemMetrics.Labels
+        fileprivate let dimensions: [(String, String)]
         fileprivate let timer: DispatchSourceTimer
 
         init(config: SystemMetrics.Configuration) {
             self.timeInterval = config.interval
             self.dataProvider = config.dataProvider
             self.labels = config.labels
+            self.dimensions = config.dimensions
             self.timer = DispatchSource.makeTimerSource(queue: self.queue)
 
             self.timer.setEventHandler(handler: DispatchWorkItem(block: { [weak self] in
                 guard let self = self, let metrics = self.dataProvider() else { return }
-                Gauge(label: self.labels.label(for: \.virtualMemoryBytes)).record(metrics.virtualMemoryBytes)
-                Gauge(label: self.labels.label(for: \.residentMemoryBytes)).record(metrics.residentMemoryBytes)
-                Gauge(label: self.labels.label(for: \.startTimeSeconds)).record(metrics.startTimeSeconds)
-                Gauge(label: self.labels.label(for: \.cpuSecondsTotal)).record(metrics.cpuSeconds)
-                Gauge(label: self.labels.label(for: \.maxFileDescriptors)).record(metrics.maxFileDescriptors)
-                Gauge(label: self.labels.label(for: \.openFileDescriptors)).record(metrics.openFileDescriptors)
+                Gauge(label: self.labels.label(for: \.virtualMemoryBytes), dimensions: self.dimensions).record(metrics.virtualMemoryBytes)
+                Gauge(label: self.labels.label(for: \.residentMemoryBytes), dimensions: self.dimensions).record(metrics.residentMemoryBytes)
+                Gauge(label: self.labels.label(for: \.startTimeSeconds), dimensions: self.dimensions).record(metrics.startTimeSeconds)
+                Gauge(label: self.labels.label(for: \.cpuSecondsTotal), dimensions: self.dimensions).record(metrics.cpuSeconds)
+                Gauge(label: self.labels.label(for: \.maxFileDescriptors), dimensions: self.dimensions).record(metrics.maxFileDescriptors)
             }))
 
             self.timer.schedule(deadline: .now() + self.timeInterval, repeating: self.timeInterval)
@@ -98,6 +99,7 @@ public enum SystemMetrics {
         let interval: DispatchTimeInterval
         let dataProvider: SystemMetrics.DataProvider
         let labels: SystemMetrics.Labels
+        let dimensions: [(String, String)]
 
         /// Create new instance of `SystemMetricsOptions`
         ///
@@ -107,7 +109,7 @@ public enum SystemMetrics {
         ///                     `SystemMetrics.linuxSystemMetrics` on Linux platforms and `SystemMetrics.noopSystemMetrics`
         ///                     on all other platforms.
         ///     - labels: The labels to use for generated system metrics.
-        public init(pollInterval interval: DispatchTimeInterval = .seconds(2), dataProvider: SystemMetrics.DataProvider? = nil, labels: Labels) {
+        public init(pollInterval interval: DispatchTimeInterval = .seconds(2), dataProvider: SystemMetrics.DataProvider? = nil, labels: Labels, dimensions: [(String, String)] = []) {
             self.interval = interval
             if let dataProvider = dataProvider {
                 self.dataProvider = dataProvider
@@ -119,6 +121,7 @@ public enum SystemMetrics {
                 #endif
             }
             self.labels = labels
+            self.dimensions = dimensions
         }
     }
 
