@@ -34,4 +34,38 @@ class SystemMetricsTest: XCTestCase {
         XCTAssertNotNil(metrics.maxFileDescriptors)
         XCTAssertNotNil(metrics.openFileDescriptors)
     }
+
+    func testSystemMetricsLabels() throws {
+        let labels = SystemMetrics.Labels(prefix: "pfx+", virtualMemoryBytes: "vmb", residentMemoryBytes: "rmb", startTimeSeconds: "sts", cpuSecondsTotal: "cpt", maxFds: "mfd", openFds: "ofd")
+
+        XCTAssertEqual(labels.label(for: \.virtualMemoryBytes), "pfx+vmb")
+        XCTAssertEqual(labels.label(for: \.residentMemoryBytes), "pfx+rmb")
+        XCTAssertEqual(labels.label(for: \.startTimeSeconds), "pfx+sts")
+        XCTAssertEqual(labels.label(for: \.cpuSecondsTotal), "pfx+cpt")
+        XCTAssertEqual(labels.label(for: \.maxFileDescriptors), "pfx+mfd")
+        XCTAssertEqual(labels.label(for: \.openFileDescriptors), "pfx+ofd")
+    }
+
+    func testSystemMetricsConfiguration() throws {
+        let labels = SystemMetrics.Labels(prefix: "pfx_", virtualMemoryBytes: "vmb", residentMemoryBytes: "rmb", startTimeSeconds: "sts", cpuSecondsTotal: "cpt", maxFds: "mfd", openFds: "ofd")
+        let dimensions = [("app", "example"), ("environment", "production")]
+        let configuration = SystemMetrics.Configuration(pollInterval: .microseconds(123456789), labels: labels, dimensions: dimensions)
+
+        XCTAssertEqual(configuration.interval, .microseconds(123456789))
+
+        XCTAssertNotNil(configuration.dataProvider)
+
+        XCTAssertEqual(configuration.labels.label(for: \.virtualMemoryBytes), "pfx_vmb")
+        XCTAssertEqual(configuration.labels.label(for: \.residentMemoryBytes), "pfx_rmb")
+        XCTAssertEqual(configuration.labels.label(for: \.startTimeSeconds), "pfx_sts")
+        XCTAssertEqual(configuration.labels.label(for: \.cpuSecondsTotal), "pfx_cpt")
+        XCTAssertEqual(configuration.labels.label(for: \.maxFileDescriptors), "pfx_mfd")
+        XCTAssertEqual(configuration.labels.label(for: \.openFileDescriptors), "pfx_ofd")
+
+        XCTAssertTrue(configuration.dimensions.contains(where: { $0 == ("app", "example") }))
+        XCTAssertTrue(configuration.dimensions.contains(where: { $0 == ("environment", "production") }))
+
+        XCTAssertFalse(configuration.dimensions.contains(where: { $0 == ("environment", "staging") }))
+        XCTAssertFalse(configuration.dimensions.contains(where: { $0 == ("process", "example") }))
+    }
 }
