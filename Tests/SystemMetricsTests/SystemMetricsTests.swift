@@ -49,9 +49,9 @@ class SystemMetricsTest: XCTestCase {
     func testSystemMetricsConfiguration() throws {
         let labels = SystemMetrics.Labels(prefix: "pfx_", virtualMemoryBytes: "vmb", residentMemoryBytes: "rmb", startTimeSeconds: "sts", cpuSecondsTotal: "cpt", maxFds: "mfd", openFds: "ofd")
         let dimensions = [("app", "example"), ("environment", "production")]
-        let configuration = SystemMetrics.Configuration(pollInterval: .microseconds(123456789), labels: labels, dimensions: dimensions)
+        let configuration = SystemMetrics.Configuration(pollInterval: .microseconds(123_456_789), labels: labels, dimensions: dimensions)
 
-        XCTAssertTrue(configuration.interval == .microseconds(123456789))
+        XCTAssertTrue(configuration.interval == .microseconds(123_456_789))
 
         XCTAssertNotNil(configuration.dataProvider)
 
