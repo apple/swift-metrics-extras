@@ -51,7 +51,7 @@ class SystemMetricsTest: XCTestCase {
         let dimensions = [("app", "example"), ("environment", "production")]
         let configuration = SystemMetrics.Configuration(pollInterval: .microseconds(123456789), labels: labels, dimensions: dimensions)
 
-        XCTAssertEqual(configuration.interval, .microseconds(123456789))
+        XCTAssertTrue(configuration.interval == .microseconds(123456789))
 
         XCTAssertNotNil(configuration.dataProvider)
 
