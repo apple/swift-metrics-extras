@@ -225,22 +225,6 @@ public enum SystemMetrics {
                 guard let f = self.file else {
                     return nil
                 }
-                #if compiler(>=5.1)
-                var buff: [CChar] = Array(unsafeUninitializedCapacity: 1024) { ptr, size in
-                    guard fgets(ptr.baseAddress, Int32(ptr.count), f) != nil else {
-                        if feof(f) != 0 {
-                            size = 0
-                            return
-                        } else {
-                            preconditionFailure("Error reading line")
-                        }
-                    }
-                    size = strlen(ptr.baseAddress!) + 1 // the string + NULL to terminate it
-                }
-                if buff.isEmpty { return nil }
-                buff[buff.index(before: buff.endIndex)] = 0 // ensure the string is null-terminated
-                return String(cString: buff)
-                #else
                 var buff = [CChar](repeating: 0, count: 1024)
                 let hasNewLine = buff.withUnsafeMutableBufferPointer { ptr -> Bool in
                     guard fgets(ptr.baseAddress, Int32(ptr.count), f) != nil else {
@@ -256,7 +240,6 @@ public enum SystemMetrics {
                     return nil
                 }
                 return String(cString: buff)
-                #endif
             }
 
             func readFull() -> String {
