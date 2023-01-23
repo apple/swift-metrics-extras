@@ -68,6 +68,7 @@ extension MetricsSystem {
                 Gauge(label: self.labels.label(for: \.startTimeSeconds), dimensions: self.dimensions).record(metrics.startTimeSeconds)
                 Gauge(label: self.labels.label(for: \.cpuSecondsTotal), dimensions: self.dimensions).record(metrics.cpuSeconds)
                 Gauge(label: self.labels.label(for: \.maxFileDescriptors), dimensions: self.dimensions).record(metrics.maxFileDescriptors)
+                Gauge(label: self.labels.label(for: \.openFileDescriptors), dimensions: self.dimensions).record(metrics.openFileDescriptors)
             }))
 
             self.timer.schedule(deadline: .now() + self.timeInterval, repeating: self.timeInterval)
