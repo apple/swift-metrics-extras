@@ -33,10 +33,20 @@ class SystemMetricsTest: XCTestCase {
         XCTAssertNotNil(metrics.cpuSeconds)
         XCTAssertNotNil(metrics.maxFileDescriptors)
         XCTAssertNotNil(metrics.openFileDescriptors)
+        XCTAssertNotNil(metrics.cpuUsage)
     }
 
     func testSystemMetricsLabels() throws {
-        let labels = SystemMetrics.Labels(prefix: "pfx+", virtualMemoryBytes: "vmb", residentMemoryBytes: "rmb", startTimeSeconds: "sts", cpuSecondsTotal: "cpt", maxFds: "mfd", openFds: "ofd")
+        let labels = SystemMetrics.Labels(
+            prefix: "pfx+",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
 
         XCTAssertEqual(labels.label(for: \.virtualMemoryBytes), "pfx+vmb")
         XCTAssertEqual(labels.label(for: \.residentMemoryBytes), "pfx+rmb")
@@ -44,10 +54,20 @@ class SystemMetricsTest: XCTestCase {
         XCTAssertEqual(labels.label(for: \.cpuSecondsTotal), "pfx+cpt")
         XCTAssertEqual(labels.label(for: \.maxFileDescriptors), "pfx+mfd")
         XCTAssertEqual(labels.label(for: \.openFileDescriptors), "pfx+ofd")
+        XCTAssertEqual(labels.label(for: \.cpuUsage), "pfx+cpu")
     }
 
     func testSystemMetricsConfiguration() throws {
-        let labels = SystemMetrics.Labels(prefix: "pfx_", virtualMemoryBytes: "vmb", residentMemoryBytes: "rmb", startTimeSeconds: "sts", cpuSecondsTotal: "cpt", maxFds: "mfd", openFds: "ofd")
+        let labels = SystemMetrics.Labels(
+            prefix: "pfx_",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
         let dimensions = [("app", "example"), ("environment", "production")]
         let configuration = SystemMetrics.Configuration(pollInterval: .microseconds(123_456_789), labels: labels, dimensions: dimensions)
 
@@ -61,6 +81,7 @@ class SystemMetricsTest: XCTestCase {
         XCTAssertEqual(configuration.labels.label(for: \.cpuSecondsTotal), "pfx_cpt")
         XCTAssertEqual(configuration.labels.label(for: \.maxFileDescriptors), "pfx_mfd")
         XCTAssertEqual(configuration.labels.label(for: \.openFileDescriptors), "pfx_ofd")
+        XCTAssertEqual(configuration.labels.label(for: \.cpuUsage), "pfx_cpu")
 
         XCTAssertTrue(configuration.dimensions.contains(where: { $0 == ("app", "example") }))
         XCTAssertTrue(configuration.dimensions.contains(where: { $0 == ("environment", "production") }))

@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift Metrics API open source project
 //
-// Copyright (c) 2018-2020 Apple Inc. and the Swift Metrics API project authors
+// Copyright (c) 2018-2023 Apple Inc. and the Swift Metrics API project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -69,6 +69,7 @@ extension MetricsSystem {
                 Gauge(label: self.labels.label(for: \.cpuSecondsTotal), dimensions: self.dimensions).record(metrics.cpuSeconds)
                 Gauge(label: self.labels.label(for: \.maxFileDescriptors), dimensions: self.dimensions).record(metrics.maxFileDescriptors)
                 Gauge(label: self.labels.label(for: \.openFileDescriptors), dimensions: self.dimensions).record(metrics.openFileDescriptors)
+                Gauge(label: self.labels.label(for: \.cpuUsage), dimensions: self.dimensions).record(metrics.cpuUsage)
             }))
 
             self.timer.schedule(deadline: .now() + self.timeInterval, repeating: self.timeInterval)
@@ -145,6 +146,8 @@ public enum SystemMetrics {
         let maxFileDescriptors: String
         /// Number of open file descriptors.
         let openFileDescriptors: String
+        /// CPU usage percentage.
+        let cpuUsage: String
 
         /// Create a new `Labels` instance.
         ///
@@ -156,7 +159,17 @@ public enum SystemMetrics {
         ///     - cpuSecondsTotal: Total user and system CPU time spent in seconds.
         ///     - maxFds: Maximum number of open file descriptors.
         ///     - openFds: Number of open file descriptors.
-        public init(prefix: String, virtualMemoryBytes: String, residentMemoryBytes: String, startTimeSeconds: String, cpuSecondsTotal: String, maxFds: String, openFds: String) {
+        ///     - cpuUsage: Total CPU usage percentage.
+        public init(
+            prefix: String,
+            virtualMemoryBytes: String,
+            residentMemoryBytes: String,
+            startTimeSeconds: String,
+            cpuSecondsTotal: String,
+            maxFds: String,
+            openFds: String,
+            cpuUsage: String
+        ) {
             self.prefix = prefix
             self.virtualMemoryBytes = virtualMemoryBytes
             self.residentMemoryBytes = residentMemoryBytes
@@ -164,6 +177,7 @@ public enum SystemMetrics {
             self.cpuSecondsTotal = cpuSecondsTotal
             self.maxFileDescriptors = maxFds
             self.openFileDescriptors = openFds
+            self.cpuUsage = cpuUsage
         }
 
         func label(for keyPath: KeyPath<Labels, String>) -> String {
@@ -173,7 +187,7 @@ public enum SystemMetrics {
 
     /// System Metric data.
     ///
-    /// The current list of metrics exposed is taken from the Prometheus Client Library Guidelines
+    /// The current list of metrics exposed is a superset of the Prometheus Client Library Guidelines:
     /// https://prometheus.io/docs/instrumenting/writing_clientlibs/#standard-and-runtime-collectors
     public struct Data {
         /// Virtual memory size in bytes.
@@ -188,12 +202,17 @@ public enum SystemMetrics {
         var maxFileDescriptors: Int
         /// Number of open file descriptors.
         var openFileDescriptors: Int
+        /// CPU usage percentage.
+        var cpuUsage: Float
     }
 
     #if os(Linux)
+
+    private static var systemStartTimeInSecondsSinceEpoch: Int?
+
     internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
         /// Minimal file reading implementation so we don't have to depend on Foundation.
-        /// Designed only for the narrow use case of this library, reading `/proc/self/stat`.
+        /// Designed only for the narrow use case of this library.
         final class CFile {
             let path: String
 
@@ -256,14 +275,6 @@ public enum SystemMetrics {
             }
         }
 
-        let ticks = _SC_CLK_TCK
-
-        let file = CFile("/proc/self/stat")
-        file.open()
-        defer {
-            file.close()
-        }
-
         enum StatIndices {
             static let virtualMemoryBytes = 20
             static let residentMemoryBytes = 21
@@ -272,8 +283,54 @@ public enum SystemMetrics {
             static let stimeTicks = 12
         }
 
+        func getSystemStartTimeInSecondsSinceEpoch() -> Int? {
+            // We can optimise this by memoising the result, since the system start
+            // time is a constant.
+            if let systemStartTimeInSecondsSinceEpoch = Self.systemStartTimeInSecondsSinceEpoch {
+                return systemStartTimeInSecondsSinceEpoch
+            }
+
+            let systemStatFile = CFile("/proc/stat")
+            systemStatFile.open()
+            defer {
+                systemStatFile.close()
+            }
+            while let line = systemStatFile.readLine() {
+                if line.starts(with: "btime"),
+                   let systemUptimeInSecondsSinceEpochString = line
+                    .split(separator: " ")
+                    .last?
+                    .split(separator: "\n")
+                    .last,
+                   let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString) {
+                    Self.systemStartTimeInSecondsSinceEpoch = systemUptimeInSecondsSinceEpoch
+                    return Self.systemStartTimeInSecondsSinceEpoch
+                }
+            }
+            Self.systemStartTimeInSecondsSinceEpoch = nil
+            return Self.systemStartTimeInSecondsSinceEpoch
+        }
+
+        let ticks = _SC_CLK_TCK
+
+        let statFile = CFile("/proc/self/stat")
+        statFile.open()
+        defer {
+            statFile.close()
+        }
+
+        let uptimeFile = CFile("/proc/uptime")
+        uptimeFile.open()
+        defer {
+            uptimeFile.close()
+        }
+
+        // Read both files as close as possible to each other to get an accurate CPU usage metric.
+        let statFileContents = statFile.readFull()
+        let uptimeFileContents = uptimeFile.readFull()
+
         guard
-            let statString = file.readFull()
+            let statString = statFileContents
             .split(separator: ")")
             .last
         else { return nil }
@@ -288,11 +345,23 @@ public enum SystemMetrics {
             let stimeTicks = Int(stats[safe: StatIndices.stimeTicks])
         else { return nil }
         let residentMemoryBytes = rss * _SC_PAGESIZE
-        let startTimeSeconds = startTimeTicks / ticks
+        let processStartTimeInSeconds = startTimeTicks / ticks
         let cpuSeconds = (utimeTicks / ticks) + (stimeTicks / ticks)
 
-        var _rlim = rlimit()
+        guard let systemStartTimeInSecondsSinceEpoch = getSystemStartTimeInSecondsSinceEpoch() else {
+            return nil
+        }
+        let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
 
+        var cpuUsage: Float = 0
+        if cpuSeconds > 0 {
+            guard let uptimeString = uptimeFileContents.split(separator: " ").first,
+                  let uptimeSeconds = Float(uptimeString)
+            else { return nil }
+            cpuUsage = (Float(cpuSeconds) * 100 / (uptimeSeconds - Float(processStartTimeInSeconds)))
+        }
+
+        var _rlim = rlimit()
         guard withUnsafeMutablePointer(to: &_rlim, { ptr in
             getrlimit(__rlimit_resource_t(RLIMIT_NOFILE.rawValue), ptr) == 0
         }) else { return nil }
@@ -309,10 +378,11 @@ public enum SystemMetrics {
         return .init(
             virtualMemoryBytes: virtualMemoryBytes,
             residentMemoryBytes: residentMemoryBytes,
-            startTimeSeconds: startTimeSeconds,
+            startTimeSeconds: startTimeInSecondsSinceEpoch,
             cpuSeconds: cpuSeconds,
             maxFileDescriptors: maxFileDescriptors,
-            openFileDescriptors: openFileDescriptors
+            openFileDescriptors: openFileDescriptors,
+            cpuUsage: cpuUsage
         )
     }
 
