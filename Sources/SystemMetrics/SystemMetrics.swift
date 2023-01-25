@@ -203,7 +203,7 @@ public enum SystemMetrics {
         /// Number of open file descriptors.
         var openFileDescriptors: Int
         /// CPU usage percentage.
-        var cpuUsage: Float
+        var cpuUsage: Double
     }
 
     #if os(Linux)
@@ -353,12 +353,12 @@ public enum SystemMetrics {
         }
         let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
 
-        var cpuUsage: Float = 0
+        var cpuUsage: Double = 0
         if cpuSeconds > 0 {
             guard let uptimeString = uptimeFileContents.split(separator: " ").first,
-                  let uptimeSeconds = Float(uptimeString)
+                  let uptimeSeconds = Double(uptimeString)
             else { return nil }
-            cpuUsage = (Float(cpuSeconds) * 100 / (uptimeSeconds - Float(processStartTimeInSeconds)))
+            cpuUsage = (Double(cpuSeconds) * 100 / (uptimeSeconds - Double(processStartTimeInSeconds)))
         }
 
         var _rlim = rlimit()
