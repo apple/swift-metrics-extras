@@ -207,108 +207,97 @@ public enum SystemMetrics {
     }
 
     #if os(Linux)
+    /// Minimal file reading implementation so we don't have to depend on Foundation.
+    /// Designed only for the narrow use case of this library.
+    final class CFile {
+        let path: String
 
-    private static var systemStartTimeInSecondsSinceEpoch: Int?
+        private var file: UnsafeMutablePointer<FILE>?
 
-    internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
-        /// Minimal file reading implementation so we don't have to depend on Foundation.
-        /// Designed only for the narrow use case of this library.
-        final class CFile {
-            let path: String
+        init(_ path: String) {
+            self.path = path
+        }
 
-            private var file: UnsafeMutablePointer<FILE>?
+        deinit {
+            assert(self.file == nil)
+        }
 
-            init(_ path: String) {
-                self.path = path
+        func open() {
+            guard let f = fopen(path, "r") else {
+                return
             }
+            self.file = f
+        }
 
-            deinit {
-                assert(self.file == nil)
-            }
-
-            func open() {
-                guard let f = fopen(path, "r") else {
-                    return
-                }
-                self.file = f
-            }
-
-            func close() {
-                if let f = self.file {
-                    self.file = nil
-                    let success = fclose(f) == 0
-                    assert(success)
-                }
-            }
-
-            func readLine() -> String? {
-                guard let f = self.file else {
-                    return nil
-                }
-                var buff = [CChar](repeating: 0, count: 1024)
-                let hasNewLine = buff.withUnsafeMutableBufferPointer { ptr -> Bool in
-                    guard fgets(ptr.baseAddress, Int32(ptr.count), f) != nil else {
-                        if feof(f) != 0 {
-                            return false
-                        } else {
-                            preconditionFailure("Error reading line")
-                        }
-                    }
-                    return true
-                }
-                if !hasNewLine {
-                    return nil
-                }
-                return String(cString: buff)
-            }
-
-            func readFull() -> String {
-                var s = ""
-                func loop() -> String {
-                    if let l = readLine() {
-                        s += l
-                        return loop()
-                    }
-                    return s
-                }
-                return loop()
+        func close() {
+            if let f = self.file {
+                self.file = nil
+                let success = fclose(f) == 0
+                assert(success)
             }
         }
 
+        func readLine() -> String? {
+            guard let f = self.file else {
+                return nil
+            }
+            var buff = [CChar](repeating: 0, count: 1024)
+            let hasNewLine = buff.withUnsafeMutableBufferPointer { ptr -> Bool in
+                guard fgets(ptr.baseAddress, Int32(ptr.count), f) != nil else {
+                    if feof(f) != 0 {
+                        return false
+                    } else {
+                        preconditionFailure("Error reading line")
+                    }
+                }
+                return true
+            }
+            if !hasNewLine {
+                return nil
+            }
+            return String(cString: buff)
+        }
+
+        func readFull() -> String {
+            var s = ""
+            func loop() -> String {
+                if let l = readLine() {
+                    s += l
+                    return loop()
+                }
+                return s
+            }
+            return loop()
+        }
+    }
+
+    private static let systemStartTimeInSecondsSinceEpoch: Int? = {
+        let systemStatFile = CFile("/proc/stat")
+        systemStatFile.open()
+        defer {
+            systemStatFile.close()
+        }
+        while let line = systemStatFile.readLine() {
+            if line.starts(with: "btime"),
+               let systemUptimeInSecondsSinceEpochString = line
+                .split(separator: " ")
+                .last?
+                .split(separator: "\n")
+                .first,
+               let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString) {
+                return systemUptimeInSecondsSinceEpoch
+            }
+        }
+        return nil
+    }()
+
+    internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
         enum StatIndices {
             static let virtualMemoryBytes = 20
             static let residentMemoryBytes = 21
             static let startTimeTicks = 19
             static let utimeTicks = 11
             static let stimeTicks = 12
-        }
-
-        func getSystemStartTimeInSecondsSinceEpoch() -> Int? {
-            // We can optimise this by memoising the result, since the system start
-            // time is a constant.
-            if let systemStartTimeInSecondsSinceEpoch = Self.systemStartTimeInSecondsSinceEpoch {
-                return systemStartTimeInSecondsSinceEpoch
-            }
-
-            let systemStatFile = CFile("/proc/stat")
-            systemStatFile.open()
-            defer {
-                systemStatFile.close()
-            }
-            while let line = systemStatFile.readLine() {
-                if line.starts(with: "btime"),
-                   let systemUptimeInSecondsSinceEpochString = line
-                    .split(separator: " ")
-                    .last?
-                    .split(separator: "\n")
-                    .last,
-                   let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString) {
-                    Self.systemStartTimeInSecondsSinceEpoch = systemUptimeInSecondsSinceEpoch
-                    return Self.systemStartTimeInSecondsSinceEpoch
-                }
-            }
-            Self.systemStartTimeInSecondsSinceEpoch = nil
-            return Self.systemStartTimeInSecondsSinceEpoch
         }
 
         let ticks = _SC_CLK_TCK
@@ -348,7 +337,7 @@ public enum SystemMetrics {
         let processStartTimeInSeconds = startTimeTicks / ticks
         let cpuSeconds = (utimeTicks / ticks) + (stimeTicks / ticks)
 
-        guard let systemStartTimeInSecondsSinceEpoch = getSystemStartTimeInSecondsSinceEpoch() else {
+        guard let systemStartTimeInSecondsSinceEpoch = Self.systemStartTimeInSecondsSinceEpoch else {
             return nil
         }
         let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
