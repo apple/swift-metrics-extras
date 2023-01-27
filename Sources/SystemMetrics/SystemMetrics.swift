@@ -271,6 +271,28 @@ public enum SystemMetrics {
         }
     }
 
+    /// A type that can calculate CPU usage for a given process.
+    ///
+    /// CPU usage is calculated as the number of CPU ticks used by this process between measurements.
+    /// - Note: the first measurement will be calculated since the process' start time, since there's no
+    /// previous measurement to take as reference.
+    private struct CPUUsageCalculator {
+        /// The number of ticks after system boot that the last CPU usage stat was taken.
+        private var previousTicksSinceSystemBoot: Int = 0
+        /// The number of ticks the process actively used the CPU, as of the previous CPU usage measurement.
+        private var previousCPUTicks: Int = 0
+
+        mutating func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
+            defer {
+                self.previousTicksSinceSystemBoot = ticksSinceSystemBoot
+                self.previousCPUTicks = cpuTicks
+            }
+            let ticksBetweenMeasurements = ticksSinceSystemBoot - self.previousTicksSinceSystemBoot
+            let cpuTicksBetweenMeasurements = cpuTicks - self.previousCPUTicks
+            return Double(cpuTicksBetweenMeasurements) * 100 / Double(ticksBetweenMeasurements)
+        }
+    }
+
     private static let systemStartTimeInSecondsSinceEpoch: Int? = {
         let systemStatFile = CFile("/proc/stat")
         systemStatFile.open()
@@ -280,16 +302,19 @@ public enum SystemMetrics {
         while let line = systemStatFile.readLine() {
             if line.starts(with: "btime"),
                let systemUptimeInSecondsSinceEpochString = line
-                .split(separator: " ")
-                .last?
-                .split(separator: "\n")
-                .first,
-               let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString) {
+               .split(separator: " ")
+               .last?
+               .split(separator: "\n")
+               .first,
+               let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString)
+            {
                 return systemUptimeInSecondsSinceEpoch
             }
         }
         return nil
     }()
+
+    private static var cpuUsageCalculator = CPUUsageCalculator()
 
     internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
         enum StatIndices {
@@ -335,19 +360,21 @@ public enum SystemMetrics {
         else { return nil }
         let residentMemoryBytes = rss * _SC_PAGESIZE
         let processStartTimeInSeconds = startTimeTicks / ticks
-        let cpuSeconds = (utimeTicks / ticks) + (stimeTicks / ticks)
+        let cpuTicks = utimeTicks + stimeTicks
+        let cpuSeconds = cpuTicks / ticks
 
-        guard let systemStartTimeInSecondsSinceEpoch = Self.systemStartTimeInSecondsSinceEpoch else {
+        guard let systemStartTimeInSecondsSinceEpoch = SystemMetrics.systemStartTimeInSecondsSinceEpoch else {
             return nil
         }
         let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
 
         var cpuUsage: Double = 0
-        if cpuSeconds > 0 {
+        if cpuTicks > 0 {
             guard let uptimeString = uptimeFileContents.split(separator: " ").first,
-                  let uptimeSeconds = Double(uptimeString)
+                  let uptimeSeconds = Float(uptimeString)
             else { return nil }
-            cpuUsage = (Double(cpuSeconds) * 100 / (uptimeSeconds - Double(processStartTimeInSeconds)))
+            let uptimeTicks = Int(ceilf(uptimeSeconds)) * ticks
+            cpuUsage = SystemMetrics.cpuUsageCalculator.getUsagePercentage(ticksSinceSystemBoot: uptimeTicks, cpuTicks: cpuTicks)
         }
 
         var _rlim = rlimit()
