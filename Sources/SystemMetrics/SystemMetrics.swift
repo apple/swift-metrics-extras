@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift Metrics API open source project
 //
-// Copyright (c) 2018-2020 Apple Inc. and the Swift Metrics API project authors
+// Copyright (c) 2018-2023 Apple Inc. and the Swift Metrics API project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -69,6 +69,7 @@ extension MetricsSystem {
                 Gauge(label: self.labels.label(for: \.cpuSecondsTotal), dimensions: self.dimensions).record(metrics.cpuSeconds)
                 Gauge(label: self.labels.label(for: \.maxFileDescriptors), dimensions: self.dimensions).record(metrics.maxFileDescriptors)
                 Gauge(label: self.labels.label(for: \.openFileDescriptors), dimensions: self.dimensions).record(metrics.openFileDescriptors)
+                Gauge(label: self.labels.label(for: \.cpuUsage), dimensions: self.dimensions).record(metrics.cpuUsage)
             }))
 
             self.timer.schedule(deadline: .now() + self.timeInterval, repeating: self.timeInterval)
@@ -145,6 +146,8 @@ public enum SystemMetrics {
         let maxFileDescriptors: String
         /// Number of open file descriptors.
         let openFileDescriptors: String
+        /// CPU usage percentage.
+        let cpuUsage: String
 
         /// Create a new `Labels` instance.
         ///
@@ -156,7 +159,17 @@ public enum SystemMetrics {
         ///     - cpuSecondsTotal: Total user and system CPU time spent in seconds.
         ///     - maxFds: Maximum number of open file descriptors.
         ///     - openFds: Number of open file descriptors.
-        public init(prefix: String, virtualMemoryBytes: String, residentMemoryBytes: String, startTimeSeconds: String, cpuSecondsTotal: String, maxFds: String, openFds: String) {
+        ///     - cpuUsage: Total CPU usage percentage.
+        public init(
+            prefix: String,
+            virtualMemoryBytes: String,
+            residentMemoryBytes: String,
+            startTimeSeconds: String,
+            cpuSecondsTotal: String,
+            maxFds: String,
+            openFds: String,
+            cpuUsage: String
+        ) {
             self.prefix = prefix
             self.virtualMemoryBytes = virtualMemoryBytes
             self.residentMemoryBytes = residentMemoryBytes
@@ -164,6 +177,7 @@ public enum SystemMetrics {
             self.cpuSecondsTotal = cpuSecondsTotal
             self.maxFileDescriptors = maxFds
             self.openFileDescriptors = openFds
+            self.cpuUsage = cpuUsage
         }
 
         func label(for keyPath: KeyPath<Labels, String>) -> String {
@@ -173,7 +187,7 @@ public enum SystemMetrics {
 
     /// System Metric data.
     ///
-    /// The current list of metrics exposed is taken from the Prometheus Client Library Guidelines
+    /// The current list of metrics exposed is a superset of the Prometheus Client Library Guidelines:
     /// https://prometheus.io/docs/instrumenting/writing_clientlibs/#standard-and-runtime-collectors
     public struct Data {
         /// Virtual memory size in bytes.
@@ -188,82 +202,121 @@ public enum SystemMetrics {
         var maxFileDescriptors: Int
         /// Number of open file descriptors.
         var openFileDescriptors: Int
+        /// CPU usage percentage.
+        var cpuUsage: Double
     }
 
     #if os(Linux)
-    internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
-        /// Minimal file reading implementation so we don't have to depend on Foundation.
-        /// Designed only for the narrow use case of this library, reading `/proc/self/stat`.
-        final class CFile {
-            let path: String
+    /// Minimal file reading implementation so we don't have to depend on Foundation.
+    /// Designed only for the narrow use case of this library.
+    final class CFile {
+        let path: String
 
-            private var file: UnsafeMutablePointer<FILE>?
+        private var file: UnsafeMutablePointer<FILE>?
 
-            init(_ path: String) {
-                self.path = path
+        init(_ path: String) {
+            self.path = path
+        }
+
+        deinit {
+            assert(self.file == nil)
+        }
+
+        func open() {
+            guard let f = fopen(path, "r") else {
+                return
             }
+            self.file = f
+        }
 
-            deinit {
-                assert(self.file == nil)
-            }
-
-            func open() {
-                guard let f = fopen(path, "r") else {
-                    return
-                }
-                self.file = f
-            }
-
-            func close() {
-                if let f = self.file {
-                    self.file = nil
-                    let success = fclose(f) == 0
-                    assert(success)
-                }
-            }
-
-            func readLine() -> String? {
-                guard let f = self.file else {
-                    return nil
-                }
-                var buff = [CChar](repeating: 0, count: 1024)
-                let hasNewLine = buff.withUnsafeMutableBufferPointer { ptr -> Bool in
-                    guard fgets(ptr.baseAddress, Int32(ptr.count), f) != nil else {
-                        if feof(f) != 0 {
-                            return false
-                        } else {
-                            preconditionFailure("Error reading line")
-                        }
-                    }
-                    return true
-                }
-                if !hasNewLine {
-                    return nil
-                }
-                return String(cString: buff)
-            }
-
-            func readFull() -> String {
-                var s = ""
-                func loop() -> String {
-                    if let l = readLine() {
-                        s += l
-                        return loop()
-                    }
-                    return s
-                }
-                return loop()
+        func close() {
+            if let f = self.file {
+                self.file = nil
+                let success = fclose(f) == 0
+                assert(success)
             }
         }
 
-        let ticks = _SC_CLK_TCK
+        func readLine() -> String? {
+            guard let f = self.file else {
+                return nil
+            }
+            var buff = [CChar](repeating: 0, count: 1024)
+            let hasNewLine = buff.withUnsafeMutableBufferPointer { ptr -> Bool in
+                guard fgets(ptr.baseAddress, Int32(ptr.count), f) != nil else {
+                    if feof(f) != 0 {
+                        return false
+                    } else {
+                        preconditionFailure("Error reading line")
+                    }
+                }
+                return true
+            }
+            if !hasNewLine {
+                return nil
+            }
+            return String(cString: buff)
+        }
 
-        let file = CFile("/proc/self/stat")
-        file.open()
+        func readFull() -> String {
+            var s = ""
+            func loop() -> String {
+                if let l = readLine() {
+                    s += l
+                    return loop()
+                }
+                return s
+            }
+            return loop()
+        }
+    }
+
+    /// A type that can calculate CPU usage for a given process.
+    ///
+    /// CPU usage is calculated as the number of CPU ticks used by this process between measurements.
+    /// - Note: the first measurement will be calculated since the process' start time, since there's no
+    /// previous measurement to take as reference.
+    private struct CPUUsageCalculator {
+        /// The number of ticks after system boot that the last CPU usage stat was taken.
+        private var previousTicksSinceSystemBoot: Int = 0
+        /// The number of ticks the process actively used the CPU, as of the previous CPU usage measurement.
+        private var previousCPUTicks: Int = 0
+
+        mutating func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
+            defer {
+                self.previousTicksSinceSystemBoot = ticksSinceSystemBoot
+                self.previousCPUTicks = cpuTicks
+            }
+            let ticksBetweenMeasurements = ticksSinceSystemBoot - self.previousTicksSinceSystemBoot
+            let cpuTicksBetweenMeasurements = cpuTicks - self.previousCPUTicks
+            return Double(cpuTicksBetweenMeasurements) * 100 / Double(ticksBetweenMeasurements)
+        }
+    }
+
+    private static let systemStartTimeInSecondsSinceEpoch: Int? = {
+        let systemStatFile = CFile("/proc/stat")
+        systemStatFile.open()
         defer {
-            file.close()
+            systemStatFile.close()
         }
+        while let line = systemStatFile.readLine() {
+            if line.starts(with: "btime"),
+               let systemUptimeInSecondsSinceEpochString = line
+               .split(separator: " ")
+               .last?
+               .split(separator: "\n")
+               .first,
+               let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString)
+            {
+                return systemUptimeInSecondsSinceEpoch
+            }
+        }
+        return nil
+    }()
 
+    private static var cpuUsageCalculator = CPUUsageCalculator()
+
+    internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
         enum StatIndices {
             static let virtualMemoryBytes = 20
             static let residentMemoryBytes = 21
@@ -272,8 +325,26 @@ public enum SystemMetrics {
             static let stimeTicks = 12
         }
 
+        let ticks = _SC_CLK_TCK
+
+        let statFile = CFile("/proc/self/stat")
+        statFile.open()
+        defer {
+            statFile.close()
+        }
+
+        let uptimeFile = CFile("/proc/uptime")
+        uptimeFile.open()
+        defer {
+            uptimeFile.close()
+        }
+
+        // Read both files as close as possible to each other to get an accurate CPU usage metric.
+        let statFileContents = statFile.readFull()
+        let uptimeFileContents = uptimeFile.readFull()
+
         guard
-            let statString = file.readFull()
+            let statString = statFileContents
             .split(separator: ")")
             .last
         else { return nil }
@@ -288,11 +359,25 @@ public enum SystemMetrics {
             let stimeTicks = Int(stats[safe: StatIndices.stimeTicks])
         else { return nil }
         let residentMemoryBytes = rss * _SC_PAGESIZE
-        let startTimeSeconds = startTimeTicks / ticks
-        let cpuSeconds = (utimeTicks / ticks) + (stimeTicks / ticks)
+        let processStartTimeInSeconds = startTimeTicks / ticks
+        let cpuTicks = utimeTicks + stimeTicks
+        let cpuSeconds = cpuTicks / ticks
+
+        guard let systemStartTimeInSecondsSinceEpoch = SystemMetrics.systemStartTimeInSecondsSinceEpoch else {
+            return nil
+        }
+        let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
+
+        var cpuUsage: Double = 0
+        if cpuTicks > 0 {
+            guard let uptimeString = uptimeFileContents.split(separator: " ").first,
+                  let uptimeSeconds = Float(uptimeString)
+            else { return nil }
+            let uptimeTicks = Int(ceilf(uptimeSeconds)) * ticks
+            cpuUsage = SystemMetrics.cpuUsageCalculator.getUsagePercentage(ticksSinceSystemBoot: uptimeTicks, cpuTicks: cpuTicks)
+        }
 
         var _rlim = rlimit()
-
         guard withUnsafeMutablePointer(to: &_rlim, { ptr in
             getrlimit(__rlimit_resource_t(RLIMIT_NOFILE.rawValue), ptr) == 0
         }) else { return nil }
@@ -309,10 +394,11 @@ public enum SystemMetrics {
         return .init(
             virtualMemoryBytes: virtualMemoryBytes,
             residentMemoryBytes: residentMemoryBytes,
-            startTimeSeconds: startTimeSeconds,
+            startTimeSeconds: startTimeInSecondsSinceEpoch,
             cpuSeconds: cpuSeconds,
             maxFileDescriptors: maxFileDescriptors,
-            openFileDescriptors: openFileDescriptors
+            openFileDescriptors: openFileDescriptors,
+            cpuUsage: cpuUsage
         )
     }
 
