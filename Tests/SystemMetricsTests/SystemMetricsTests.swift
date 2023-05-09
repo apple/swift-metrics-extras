@@ -21,10 +21,6 @@ class SystemMetricsTest: XCTestCase {
     func testSystemMetricsGeneration() throws {
         #if os(Linux)
         let _metrics = SystemMetrics.linuxSystemMetrics()
-        #else
-        let _metrics = SystemMetrics.noopSystemMetrics()
-        throw XCTSkip()
-        #endif
         XCTAssertNotNil(_metrics)
         let metrics = _metrics!
         XCTAssertNotNil(metrics.virtualMemoryBytes)
@@ -34,6 +30,9 @@ class SystemMetricsTest: XCTestCase {
         XCTAssertNotNil(metrics.maxFileDescriptors)
         XCTAssertNotNil(metrics.openFileDescriptors)
         XCTAssertNotNil(metrics.cpuUsage)
+        #else
+        throw XCTSkip()
+        #endif
     }
 
     func testSystemMetricsLabels() throws {
@@ -88,5 +87,20 @@ class SystemMetricsTest: XCTestCase {
 
         XCTAssertFalse(configuration.dimensions.contains(where: { $0 == ("environment", "staging") }))
         XCTAssertFalse(configuration.dimensions.contains(where: { $0 == ("process", "example") }))
+    }
+
+    func testCPUUsageCalculator() throws {
+        #if os(Linux)
+        var calculator = SystemMetrics.CPUUsageCalculator()
+        var usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 0, cpuTicks: 0)
+        XCTAssertFalse(usage.isNaN)
+        XCTAssertEqual(usage, 0)
+
+        usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 20, cpuTicks: 10)
+        XCTAssertFalse(usage.isNaN)
+        XCTAssertEqual(usage, 50)
+        #else
+        throw XCTSkip()
+        #endif
     }
 }

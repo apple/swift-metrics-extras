@@ -276,10 +276,10 @@ public enum SystemMetrics {
     /// CPU usage is calculated as the number of CPU ticks used by this process between measurements.
     /// - Note: the first measurement will be calculated since the process' start time, since there's no
     /// previous measurement to take as reference.
-    private struct CPUUsageCalculator {
+    internal struct CPUUsageCalculator {
         /// The number of ticks after system boot that the last CPU usage stat was taken.
         private var previousTicksSinceSystemBoot: Int = 0
-        /// The number of ticks the process actively used the CPU, as of the previous CPU usage measurement.
+        /// The number of ticks the process actively used the CPU for, as of the previous CPU usage measurement.
         private var previousCPUTicks: Int = 0
 
         mutating func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
@@ -288,6 +288,10 @@ public enum SystemMetrics {
                 self.previousCPUTicks = cpuTicks
             }
             let ticksBetweenMeasurements = ticksSinceSystemBoot - self.previousTicksSinceSystemBoot
+            guard ticksBetweenMeasurements > 0 else {
+                return 0
+            }
+
             let cpuTicksBetweenMeasurements = cpuTicks - self.previousCPUTicks
             return Double(cpuTicksBetweenMeasurements) * 100 / Double(ticksBetweenMeasurements)
         }
@@ -371,7 +375,8 @@ public enum SystemMetrics {
         var cpuUsage: Double = 0
         if cpuTicks > 0 {
             guard let uptimeString = uptimeFileContents.split(separator: " ").first,
-                  let uptimeSeconds = Float(uptimeString)
+                  let uptimeSeconds = Float(uptimeString),
+                  uptimeSeconds.isFinite
             else { return nil }
             let uptimeTicks = Int(ceilf(uptimeSeconds)) * ticks
             cpuUsage = SystemMetrics.cpuUsageCalculator.getUsagePercentage(ticksSinceSystemBoot: uptimeTicks, cpuTicks: cpuTicks)

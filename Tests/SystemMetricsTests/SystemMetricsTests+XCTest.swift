@@ -28,6 +28,7 @@ extension SystemMetricsTest {
             ("testSystemMetricsGeneration", testSystemMetricsGeneration),
             ("testSystemMetricsLabels", testSystemMetricsLabels),
             ("testSystemMetricsConfiguration", testSystemMetricsConfiguration),
+            ("testCPUUsageCalculator", testCPUUsageCalculator),
         ]
     }
 }
