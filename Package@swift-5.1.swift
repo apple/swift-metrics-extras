@@ -19,7 +19,6 @@ let package = Package(
     name: "swift-metrics-extras",
     products: [
         .library(name: "SystemMetrics", targets: ["SystemMetrics"]),
-        .library(name: "MetricsTestUtils", targets: ["MetricsTestUtils"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2"),
@@ -28,10 +27,6 @@ let package = Package(
         .target(
             name: "SystemMetrics",
             dependencies: ["CoreMetrics"]
-        ),
-        .target(
-            name: "MetricsTestUtils",
-            dependencies: ["Metrics", "CoreMetrics"]
         ),
         .testTarget(
             name: "SystemMetricsTests",

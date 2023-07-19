@@ -1,4 +1,4 @@
 version: 1
 builder:
   configs:
-    - documentation_targets: [MetricsTestUtils, SystemMetrics]
+    - documentation_targets: [SystemMetrics]
