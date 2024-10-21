@@ -14,9 +14,12 @@
 import CoreMetrics
 import Dispatch
 
-#if os(Linux)
+#if canImport(Glibc)
 import Glibc
+#elseif canImport(Musl)
+import Musl
 #endif
+
 
 extension MetricsSystem {
     fileprivate static var systemMetricsProvider: SystemMetricsProvider?
@@ -329,7 +332,7 @@ public enum SystemMetrics {
             static let stimeTicks = 12
         }
 
-        let ticks = _SC_CLK_TCK
+        let ticks = Int(_SC_CLK_TCK)
 
         let statFile = CFile("/proc/self/stat")
         statFile.open()
@@ -362,7 +365,7 @@ public enum SystemMetrics {
             let utimeTicks = Int(stats[safe: StatIndices.utimeTicks]),
             let stimeTicks = Int(stats[safe: StatIndices.stimeTicks])
         else { return nil }
-        let residentMemoryBytes = rss * _SC_PAGESIZE
+        let residentMemoryBytes = rss * Int(_SC_PAGESIZE)
         let processStartTimeInSeconds = startTimeTicks / ticks
         let cpuTicks = utimeTicks + stimeTicks
         let cpuSeconds = cpuTicks / ticks
@@ -384,7 +387,11 @@ public enum SystemMetrics {
 
         var _rlim = rlimit()
         guard withUnsafeMutablePointer(to: &_rlim, { ptr in
+            #if canImport(Musl)
+            getrlimit(RLIMIT_NOFILE, ptr) == 0
+            #else
             getrlimit(__rlimit_resource_t(RLIMIT_NOFILE.rawValue), ptr) == 0
+            #endif
         }) else { return nil }
 
         let maxFileDescriptors = Int(_rlim.rlim_max)
