@@ -13,8 +13,10 @@
 //===----------------------------------------------------------------------===//
 @testable import SystemMetrics
 import XCTest
-#if os(Linux)
+#if canImport(Glibc)
 import Glibc
+#elseif canImport(Musl)
+import Musl
 #endif
 
 class SystemMetricsTest: XCTestCase {
