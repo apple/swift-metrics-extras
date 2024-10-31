@@ -2,7 +2,7 @@
 //
 // This source file is part of the Swift Metrics API open source project
 //
-// Copyright (c) 2018-2023 Apple Inc. and the Swift Metrics API project authors
+// Copyright (c) 2018-2024 Apple Inc. and the Swift Metrics API project authors
 // Licensed under Apache License v2.0
 //
 // See LICENSE.txt for license information
@@ -61,16 +61,32 @@ extension MetricsSystem {
             self.dimensions = config.dimensions
             self.timer = DispatchSource.makeTimerSource(queue: self.queue)
 
-            self.timer.setEventHandler(handler: DispatchWorkItem(block: { [weak self] in
-                guard let self = self, let metrics = self.dataProvider() else { return }
-                Gauge(label: self.labels.label(for: \.virtualMemoryBytes), dimensions: self.dimensions).record(metrics.virtualMemoryBytes)
-                Gauge(label: self.labels.label(for: \.residentMemoryBytes), dimensions: self.dimensions).record(metrics.residentMemoryBytes)
-                Gauge(label: self.labels.label(for: \.startTimeSeconds), dimensions: self.dimensions).record(metrics.startTimeSeconds)
-                Gauge(label: self.labels.label(for: \.cpuSecondsTotal), dimensions: self.dimensions).record(metrics.cpuSeconds)
-                Gauge(label: self.labels.label(for: \.maxFileDescriptors), dimensions: self.dimensions).record(metrics.maxFileDescriptors)
-                Gauge(label: self.labels.label(for: \.openFileDescriptors), dimensions: self.dimensions).record(metrics.openFileDescriptors)
-                Gauge(label: self.labels.label(for: \.cpuUsage), dimensions: self.dimensions).record(metrics.cpuUsage)
-            }))
+            self.timer.setEventHandler(
+                handler: DispatchWorkItem(block: { [weak self] in
+                    guard let self = self, let metrics = self.dataProvider() else { return }
+                    Gauge(label: self.labels.label(for: \.virtualMemoryBytes), dimensions: self.dimensions).record(
+                        metrics.virtualMemoryBytes
+                    )
+                    Gauge(label: self.labels.label(for: \.residentMemoryBytes), dimensions: self.dimensions).record(
+                        metrics.residentMemoryBytes
+                    )
+                    Gauge(label: self.labels.label(for: \.startTimeSeconds), dimensions: self.dimensions).record(
+                        metrics.startTimeSeconds
+                    )
+                    Gauge(label: self.labels.label(for: \.cpuSecondsTotal), dimensions: self.dimensions).record(
+                        metrics.cpuSeconds
+                    )
+                    Gauge(label: self.labels.label(for: \.maxFileDescriptors), dimensions: self.dimensions).record(
+                        metrics.maxFileDescriptors
+                    )
+                    Gauge(label: self.labels.label(for: \.openFileDescriptors), dimensions: self.dimensions).record(
+                        metrics.openFileDescriptors
+                    )
+                    Gauge(label: self.labels.label(for: \.cpuUsage), dimensions: self.dimensions).record(
+                        metrics.cpuUsage
+                    )
+                })
+            )
 
             self.timer.schedule(deadline: .now() + self.timeInterval, repeating: self.timeInterval)
 
@@ -106,12 +122,18 @@ public enum SystemMetrics {
         /// Create new instance of `SystemMetricsOptions`
         ///
         /// - parameters:
-        ///     - pollInterval: The interval at which system metrics should be updated.
+        ///     - interval: The interval at which system metrics should be updated.
         ///     - dataProvider: The provider to get SystemMetrics data from. If none is provided this defaults to
         ///                     `SystemMetrics.linuxSystemMetrics` on Linux platforms and `SystemMetrics.noopSystemMetrics`
         ///                     on all other platforms.
         ///     - labels: The labels to use for generated system metrics.
-        public init(pollInterval interval: DispatchTimeInterval = .seconds(2), dataProvider: SystemMetrics.DataProvider? = nil, labels: Labels, dimensions: [(String, String)] = []) {
+        ///     - dimensions: The dimensions to include in generated system metrics.
+        public init(
+            pollInterval interval: DispatchTimeInterval = .seconds(2),
+            dataProvider: SystemMetrics.DataProvider? = nil,
+            labels: Labels,
+            dimensions: [(String, String)] = []
+        ) {
             self.interval = interval
             if let dataProvider = dataProvider {
                 self.dataProvider = dataProvider
@@ -181,7 +203,7 @@ public enum SystemMetrics {
         }
 
         func label(for keyPath: KeyPath<Labels, String>) -> String {
-            return self.prefix + self[keyPath: keyPath]
+            self.prefix + self[keyPath: keyPath]
         }
     }
 
@@ -305,12 +327,13 @@ public enum SystemMetrics {
         }
         while let line = systemStatFile.readLine() {
             if line.starts(with: "btime"),
-               let systemUptimeInSecondsSinceEpochString = line
-               .split(separator: " ")
-               .last?
-               .split(separator: "\n")
-               .first,
-               let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString)
+                let systemUptimeInSecondsSinceEpochString =
+                    line
+                    .split(separator: " ")
+                    .last?
+                    .split(separator: "\n")
+                    .first,
+                let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString)
             {
                 return systemUptimeInSecondsSinceEpoch
             }
@@ -348,9 +371,10 @@ public enum SystemMetrics {
         let uptimeFileContents = uptimeFile.readFull()
 
         guard
-            let statString = statFileContents
-            .split(separator: ")")
-            .last
+            let statString =
+                statFileContents
+                .split(separator: ")")
+                .last
         else { return nil }
         let stats = String(statString)
             .split(separator: " ")
@@ -375,17 +399,25 @@ public enum SystemMetrics {
         var cpuUsage: Double = 0
         if cpuTicks > 0 {
             guard let uptimeString = uptimeFileContents.split(separator: " ").first,
-                  let uptimeSeconds = Float(uptimeString),
-                  uptimeSeconds.isFinite
+                let uptimeSeconds = Float(uptimeString),
+                uptimeSeconds.isFinite
             else { return nil }
             let uptimeTicks = Int(ceilf(uptimeSeconds)) * ticks
-            cpuUsage = SystemMetrics.cpuUsageCalculator.getUsagePercentage(ticksSinceSystemBoot: uptimeTicks, cpuTicks: cpuTicks)
+            cpuUsage = SystemMetrics.cpuUsageCalculator.getUsagePercentage(
+                ticksSinceSystemBoot: uptimeTicks,
+                cpuTicks: cpuTicks
+            )
         }
 
         var _rlim = rlimit()
-        guard withUnsafeMutablePointer(to: &_rlim, { ptr in
-            getrlimit(__rlimit_resource_t(RLIMIT_NOFILE.rawValue), ptr) == 0
-        }) else { return nil }
+        guard
+            withUnsafeMutablePointer(
+                to: &_rlim,
+                { ptr in
+                    getrlimit(__rlimit_resource_t(RLIMIT_NOFILE.rawValue), ptr) == 0
+                }
+            )
+        else { return nil }
 
         let maxFileDescriptors = Int(_rlim.rlim_max)
 
@@ -412,7 +444,7 @@ public enum SystemMetrics {
     #endif
 
     internal static func noopSystemMetrics() -> SystemMetrics.Data? {
-        return nil
+        nil
     }
 }
 
