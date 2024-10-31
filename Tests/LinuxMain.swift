@@ -26,6 +26,6 @@ import XCTest
 @testable import SystemMetricsTests
 
 XCTMain([
-    testCase(SystemMetricsTest.allTests),
+    testCase(SystemMetricsTest.allTests)
 ])
 #endif

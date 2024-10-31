@@ -11,8 +11,10 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
-@testable import SystemMetrics
 import XCTest
+
+@testable import SystemMetrics
+
 #if os(Linux)
 import Glibc
 #endif
@@ -68,7 +70,11 @@ class SystemMetricsTest: XCTestCase {
             cpuUsage: "cpu"
         )
         let dimensions = [("app", "example"), ("environment", "production")]
-        let configuration = SystemMetrics.Configuration(pollInterval: .microseconds(123_456_789), labels: labels, dimensions: dimensions)
+        let configuration = SystemMetrics.Configuration(
+            pollInterval: .microseconds(123_456_789),
+            labels: labels,
+            dimensions: dimensions
+        )
 
         XCTAssertTrue(configuration.interval == .microseconds(123_456_789))
 

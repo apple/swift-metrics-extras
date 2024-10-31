@@ -1,4 +1,4 @@
-// swift-tools-version:5.6
+// swift-tools-version:5.9
 //===----------------------------------------------------------------------===//
 //
 // This source file is part of the Swift Metrics API open source project
@@ -18,25 +18,22 @@ import PackageDescription
 let package = Package(
     name: "swift-metrics-extras",
     products: [
-        .library(name: "SystemMetrics", targets: ["SystemMetrics"]),
+        .library(name: "SystemMetrics", targets: ["SystemMetrics"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2"),
-
-        // ~~~ SwiftPM Plugins ~~~
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2")
     ],
     targets: [
         .target(
             name: "SystemMetrics",
             dependencies: [
-                .product(name: "CoreMetrics", package: "swift-metrics"),
+                .product(name: "CoreMetrics", package: "swift-metrics")
             ]
         ),
         .testTarget(
             name: "SystemMetricsTests",
             dependencies: [
-                "SystemMetrics",
+                "SystemMetrics"
             ]
         ),
     ]

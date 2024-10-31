@@ -24,7 +24,7 @@ import XCTest
 
 extension SystemMetricsTest {
     static var allTests: [(String, (SystemMetricsTest) -> () throws -> Void)] {
-        return [
+        [
             ("testSystemMetricsGeneration", testSystemMetricsGeneration),
             ("testSystemMetricsLabels", testSystemMetricsLabels),
             ("testSystemMetricsConfiguration", testSystemMetricsConfiguration),
