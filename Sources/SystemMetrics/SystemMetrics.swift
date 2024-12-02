@@ -31,14 +31,8 @@ private final class SystemMetricsProviderContainer: @unchecked Sendable {
     /// - Parameter provider: The provider to set, or `nil` to unset the existing one.
     func bootstrap(_ provider: MetricsSystem.SystemMetricsProvider?) {
         MetricsSystem.withWriterLock {
+            precondition(self.systemMetricsProvider == nil, "System metrics already bootstrapped.")
             self.systemMetricsProvider = provider
-        }
-    }
-
-    /// A Boolean value indicating whether the container is empty.
-    var isUninitialized: Bool {
-        MetricsSystem.withWriterLock {
-            self.systemMetricsProvider == nil
         }
     }
 }
@@ -67,10 +61,7 @@ extension MetricsSystem {
     /// - parameters:
     ///     - config: Used to configure `SystemMetrics`.
     public static func bootstrapSystemMetrics(_ config: SystemMetrics.Configuration) {
-        self.withWriterLock {
-            precondition(self.systemMetricsProviderContainer.isUninitialized, "System metrics already bootstrapped.")
-            self.systemMetricsProviderContainer.bootstrap(SystemMetricsProvider(config: config))
-        }
+        self.systemMetricsProviderContainer.bootstrap(SystemMetricsProvider(config: config))
     }
 
     internal class SystemMetricsProvider {
