@@ -8,3 +8,4 @@
 .swiftpm
 .idea
 Package.resolved
+.vscode

@@ -97,7 +97,7 @@ class SystemMetricsTest: XCTestCase {
 
     func testCPUUsageCalculator() throws {
         #if os(Linux)
-        var calculator = SystemMetrics.CPUUsageCalculator()
+        let calculator = SystemMetrics.CPUUsageCalculator()
         var usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 0, cpuTicks: 0)
         XCTAssertFalse(usage.isNaN)
         XCTAssertEqual(usage, 0)

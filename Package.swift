@@ -38,3 +38,9 @@ let package = Package(
         ),
     ]
 )
+
+for target in package.targets {
+    var settings = target.swiftSettings ?? []
+    settings.append(.enableExperimentalFeature("StrictConcurrency=complete"))
+    target.swiftSettings = settings
+}
