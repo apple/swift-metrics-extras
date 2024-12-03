@@ -18,8 +18,29 @@ import Dispatch
 import Glibc
 #endif
 
+/// A thread-safe wrapper for the global system metrics provider.
+private final class SystemMetricsProviderContainer: @unchecked Sendable {
+
+    /// The underlying system metrics provider.
+    private var systemMetricsProvider: MetricsSystem.SystemMetricsProvider?
+
+    /// Creates a new container.
+    init() {}
+
+    /// Updates the global system metrics provider.
+    /// - Parameter provider: The provider to set, or `nil` to unset the existing one.
+    func bootstrap(_ provider: MetricsSystem.SystemMetricsProvider?) {
+        MetricsSystem.withWriterLock {
+            precondition(self.systemMetricsProvider == nil, "System metrics already bootstrapped.")
+            self.systemMetricsProvider = provider
+        }
+    }
+}
+
 extension MetricsSystem {
-    fileprivate static var systemMetricsProvider: SystemMetricsProvider?
+
+    /// A thread-safe container for the global system metrics provider.
+    fileprivate static let systemMetricsProviderContainer: SystemMetricsProviderContainer = .init()
 
     /// `bootstrapWithSystemMetrics` is an one-time configuration function which globally selects the desired metrics backend
     /// implementation, and enables system level metrics. `bootstrapWithSystemMetrics` can be called at maximum once in any given program,
@@ -40,10 +61,7 @@ extension MetricsSystem {
     /// - parameters:
     ///     - config: Used to configure `SystemMetrics`.
     public static func bootstrapSystemMetrics(_ config: SystemMetrics.Configuration) {
-        self.withWriterLock {
-            precondition(self.systemMetricsProvider == nil, "System metrics already bootstrapped.")
-            self.systemMetricsProvider = SystemMetricsProvider(config: config)
-        }
+        self.systemMetricsProviderContainer.bootstrap(SystemMetricsProvider(config: config))
     }
 
     internal class SystemMetricsProvider {
@@ -298,24 +316,26 @@ public enum SystemMetrics {
     /// CPU usage is calculated as the number of CPU ticks used by this process between measurements.
     /// - Note: the first measurement will be calculated since the process' start time, since there's no
     /// previous measurement to take as reference.
-    internal struct CPUUsageCalculator {
+    internal final class CPUUsageCalculator: @unchecked Sendable {
         /// The number of ticks after system boot that the last CPU usage stat was taken.
-        private var previousTicksSinceSystemBoot: Int = 0
+        private var locked_previousTicksSinceSystemBoot: Int = 0
         /// The number of ticks the process actively used the CPU for, as of the previous CPU usage measurement.
-        private var previousCPUTicks: Int = 0
+        private var locked_previousCPUTicks: Int = 0
 
-        mutating func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
-            defer {
-                self.previousTicksSinceSystemBoot = ticksSinceSystemBoot
-                self.previousCPUTicks = cpuTicks
-            }
-            let ticksBetweenMeasurements = ticksSinceSystemBoot - self.previousTicksSinceSystemBoot
-            guard ticksBetweenMeasurements > 0 else {
-                return 0
-            }
+        func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
+            MetricsSystem.withWriterLock {
+                defer {
+                    self.locked_previousTicksSinceSystemBoot = ticksSinceSystemBoot
+                    self.locked_previousCPUTicks = cpuTicks
+                }
+                let ticksBetweenMeasurements = ticksSinceSystemBoot - self.locked_previousTicksSinceSystemBoot
+                guard ticksBetweenMeasurements > 0 else {
+                    return 0
+                }
 
-            let cpuTicksBetweenMeasurements = cpuTicks - self.previousCPUTicks
-            return Double(cpuTicksBetweenMeasurements) * 100 / Double(ticksBetweenMeasurements)
+                let cpuTicksBetweenMeasurements = cpuTicks - self.locked_previousCPUTicks
+                return Double(cpuTicksBetweenMeasurements) * 100 / Double(ticksBetweenMeasurements)
+            }
         }
     }
 
@@ -341,7 +361,7 @@ public enum SystemMetrics {
         return nil
     }()
 
-    private static var cpuUsageCalculator = CPUUsageCalculator()
+    private static let cpuUsageCalculator = CPUUsageCalculator()
 
     internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
         enum StatIndices {
