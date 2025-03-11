@@ -109,4 +109,69 @@ class SystemMetricsTest: XCTestCase {
         throw XCTSkip()
         #endif
     }
+
+    func testLinuxResidentMemoryBytes() throws {
+        #if os(Linux)
+
+        let pageByteCount = sysconf(Int32(_SC_PAGESIZE))
+        let allocationSize = 10_000 * pageByteCount
+
+        let warmups = 20
+        for _ in 0..<warmups {
+            let bytes = UnsafeMutableRawBufferPointer.allocate(byteCount: allocationSize, alignment: 1)
+            defer { bytes.deallocate() }
+            bytes.initializeMemory(as: UInt8.self, repeating: .zero)
+        }
+
+        guard let startResidentMemoryBytes = SystemMetrics.linuxSystemMetrics()?.residentMemoryBytes else {
+            XCTFail("Could not get resident memory usage.")
+            return
+        }
+
+        let bytes = UnsafeMutableRawBufferPointer.allocate(byteCount: allocationSize, alignment: 1)
+        defer { bytes.deallocate() }
+        bytes.initializeMemory(as: UInt8.self, repeating: .zero)
+
+        guard let residentMemoryBytes = SystemMetrics.linuxSystemMetrics()?.residentMemoryBytes else {
+            XCTFail("Could not get resident memory usage.")
+            return
+        }
+
+        /// According to the man page for proc_pid_stat(5) the value is
+        /// advertised as inaccurate.  It refers to proc_pid_statm(5), which
+        /// itself states:
+        /// 
+        ///     Some of these values are inaccurate because of a kernel-
+        ///     internal scalability optimization.  If accurate values are
+        ///     required, use /proc/pid/smaps or /proc/pid/smaps_rollup
+        ///     instead, which are much slower but provide accurate,
+        ///     detailed information.
+        ///
+        /// Deferring discussion on whether we should extend this package to
+        /// produce these slower-to-retrieve, more-accurate values, we check
+        /// that the RSS value is within 1% of the expected allocation increase.
+        XCTAssertEqual(residentMemoryBytes - startResidentMemoryBytes, allocationSize, accuracy: allocationSize / 100)
+
+        #else
+        throw XCTSkip()
+        #endif
+    }
+
+    func testLinuxCPUSeconds() throws {
+        #if os(Linux)
+
+        let bytes = Array(repeating: UInt8.zero, count: 10)
+        var hasher = Hasher()
+
+        let startTime = Date()
+        while Date().timeIntervalSince(startTime) < 1 {
+            bytes.hash(into: &hasher)
+        }
+
+        XCTAssertEqual(SystemMetrics.linuxSystemMetrics()?.cpuSeconds, 1)
+
+        #else
+        throw XCTSkip()
+        #endif
+    }
 }
