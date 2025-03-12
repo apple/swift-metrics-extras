@@ -140,7 +140,7 @@ class SystemMetricsTest: XCTestCase {
         /// According to the man page for proc_pid_stat(5) the value is
         /// advertised as inaccurate.  It refers to proc_pid_statm(5), which
         /// itself states:
-        /// 
+        ///
         ///     Some of these values are inaccurate because of a kernel-
         ///     internal scalability optimization.  If accurate values are
         ///     required, use /proc/pid/smaps or /proc/pid/smaps_rollup
