@@ -364,6 +364,67 @@ public enum SystemMetrics {
     private static let cpuUsageCalculator = CPUUsageCalculator()
 
     internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
+        /// The current implementation below reads /proc/self/stat. Then,
+        /// presumably to accommodate whitespace in the `comm` field
+        /// without dealing with null-terminated C strings, it splits on the
+        /// closing parenthesis surrounding the value. It then splits the
+        /// remaining string by space, meaning the first element in the
+        /// resulting array, at index 0, refers to the the third field.
+        ///
+        /// Note that the man page documents fields starting at index 1.
+        ///
+        /// ````
+        /// proc_pid_stat(5)     File Formats Manual     proc_pid_stat(5)
+        ///
+        /// ...
+        ///
+        ///  (1) pid  %d
+        ///         The process ID.
+        ///
+        ///  (2) comm  %s
+        ///         The filename of the executable, in parentheses.
+        ///         Strings longer than TASK_COMM_LEN (16) characters
+        ///         (including the terminating null byte) are silently
+        ///         truncated.  This is visible whether or not the
+        ///         executable is swapped out.
+        /// ...
+        ///
+        ///  (14) utime  %lu
+        ///         Amount of time that this process has been scheduled
+        ///         in user mode, measured in clock ticks (divide by
+        ///         sysconf(_SC_CLK_TCK)).  This includes guest time,
+        ///         guest_time (time spent running a virtual CPU, see
+        ///         below), so that applications that are not aware of
+        ///         the guest time field do not lose that time from
+        ///         their calculations.
+        ///
+        ///  (15) stime  %lu
+        ///         Amount of time that this process has been scheduled
+        ///         in kernel mode, measured in clock ticks (divide by
+        ///         sysconf(_SC_CLK_TCK)).
+        ///
+        /// ...
+        ///
+        ///  (22) starttime  %llu
+        ///         The time the process started after system boot.
+        ///         Before Linux 2.6, this value was expressed in
+        ///         jiffies.  Since Linux 2.6, the value is expressed in
+        ///         clock ticks (divide by sysconf(_SC_CLK_TCK)).
+        ///
+        ///         The format for this field was %lu before Linux 2.6.
+        ///
+        ///  (23) vsize  %lu
+        ///         Virtual memory size in bytes.
+        ///         The format for this field was %lu before Linux 2.6.
+        ///
+        ///  (24) rss  %ld
+        ///         Resident Set Size: number of pages the process has
+        ///         in real memory.  This is just the pages which count
+        ///         toward text, data, or stack space.  This does not
+        ///         include pages which have not been demand-loaded in,
+        ///         or which are swapped out.  This value is inaccurate;
+        ///         see /proc/pid/statm below.
+        /// ```
         enum StatIndices {
             static let virtualMemoryBytes = 20
             static let residentMemoryBytes = 21
@@ -372,7 +433,14 @@ public enum SystemMetrics {
             static let stimeTicks = 12
         }
 
-        let ticks = _SC_CLK_TCK
+        /// Some of the metrics from procfs need to be combined with system
+        /// values, which we obtain from sysconf(3). These values do not change
+        /// during the lifetime of the process so we define them as static
+        /// members here.
+        enum SystemConfiguration {
+            static let clockTicksPerSecond = sysconf(Int32(_SC_CLK_TCK))
+            static let pageByteCount = sysconf(Int32(_SC_PAGESIZE))
+        }
 
         let statFile = CFile("/proc/self/stat")
         statFile.open()
@@ -406,10 +474,11 @@ public enum SystemMetrics {
             let utimeTicks = Int(stats[safe: StatIndices.utimeTicks]),
             let stimeTicks = Int(stats[safe: StatIndices.stimeTicks])
         else { return nil }
-        let residentMemoryBytes = rss * _SC_PAGESIZE
-        let processStartTimeInSeconds = startTimeTicks / ticks
+
+        let residentMemoryBytes = rss * SystemConfiguration.pageByteCount
+        let processStartTimeInSeconds = startTimeTicks / SystemConfiguration.clockTicksPerSecond
         let cpuTicks = utimeTicks + stimeTicks
-        let cpuSeconds = cpuTicks / ticks
+        let cpuSeconds = cpuTicks / SystemConfiguration.clockTicksPerSecond
 
         guard let systemStartTimeInSecondsSinceEpoch = SystemMetrics.systemStartTimeInSecondsSinceEpoch else {
             return nil
@@ -422,7 +491,7 @@ public enum SystemMetrics {
                 let uptimeSeconds = Float(uptimeString),
                 uptimeSeconds.isFinite
             else { return nil }
-            let uptimeTicks = Int(ceilf(uptimeSeconds)) * ticks
+            let uptimeTicks = Int(ceilf(uptimeSeconds)) * SystemConfiguration.clockTicksPerSecond
             cpuUsage = SystemMetrics.cpuUsageCalculator.getUsagePercentage(
                 ticksSinceSystemBoot: uptimeTicks,
                 cpuTicks: cpuTicks
