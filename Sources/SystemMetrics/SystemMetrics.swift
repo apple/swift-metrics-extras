@@ -121,17 +121,17 @@ extension MetricsSystem {
     }
 }
 
-public enum SystemMetrics {
+public enum SystemMetrics: Sendable {
     /// Provider used by `SystemMetrics` to get the requested `SystemMetrics.Data`.
     ///
     /// Defaults are currently only provided for linux. (`SystemMetrics.linuxSystemMetrics`)
-    public typealias DataProvider = () -> SystemMetrics.Data?
+    @preconcurrency public typealias DataProvider = @Sendable () -> SystemMetrics.Data?
 
     /// Configuration used to bootstrap `SystemMetrics`.
     ///
     /// Backend implementations are encouraged to extend `SystemMetrics.Configuration` with a static extension with
     /// defaults that suit their specific backend needs.
-    public struct Configuration {
+    public struct Configuration: Sendable {
         let interval: DispatchTimeInterval
         let dataProvider: SystemMetrics.DataProvider
         let labels: SystemMetrics.Labels
@@ -171,7 +171,7 @@ public enum SystemMetrics {
     ///
     /// Backend implementations are encouraged to provide a static extension with
     /// defaults that suit their specific backend needs.
-    public struct Labels {
+    public struct Labels: Sendable {
         /// Prefix to prefix all other labels with.
         let prefix: String
         /// Virtual memory size in bytes.
@@ -229,7 +229,7 @@ public enum SystemMetrics {
     ///
     /// The current list of metrics exposed is a superset of the Prometheus Client Library Guidelines:
     /// https://prometheus.io/docs/instrumenting/writing_clientlibs/#standard-and-runtime-collectors
-    public struct Data {
+    public struct Data: Sendable {
         /// Virtual memory size in bytes.
         var virtualMemoryBytes: Int
         /// Resident memory size in bytes.
@@ -281,21 +281,28 @@ public enum SystemMetrics {
             guard let f = self.file else {
                 return nil
             }
-            var buff = [CChar](repeating: 0, count: 1024)
-            let hasNewLine = buff.withUnsafeMutableBufferPointer { ptr -> Bool in
-                guard fgets(ptr.baseAddress, Int32(ptr.count), f) != nil else {
-                    if feof(f) != 0 {
-                        return false
-                    } else {
-                        preconditionFailure("Error reading line")
+            return withUnsafeTemporaryAllocation(of: CChar.self, capacity: 1024) { (ptr) -> String? in
+                let hasNewLine = {
+                    guard fgets(ptr.baseAddress, Int32(ptr.count), f) != nil else {
+                        // feof returns non-zero only when eof has been reached
+                        if feof(f) != 0 {
+                            return false
+                        } else {
+                            preconditionFailure("Error reading line")
+                        }
                     }
+                    return true
+                }()
+                if !hasNewLine {
+                    return nil
                 }
-                return true
+                // fgets return value has already been checked to be non-null
+                // and it returns the pointer passed in as the first argument
+                // this ensures at this point the ptr contains a valid C string
+                // the initializer will copy the memory ensuring it doesn't
+                // outlive the scope of withUnsafeTemporaryAllocation
+                return String(cString: ptr.baseAddress!)
             }
-            if !hasNewLine {
-                return nil
-            }
-            return String(cString: buff)
         }
 
         func readFull() -> String {
@@ -363,6 +370,7 @@ public enum SystemMetrics {
 
     private static let cpuUsageCalculator = CPUUsageCalculator()
 
+    @Sendable
     internal static func linuxSystemMetrics() -> SystemMetrics.Data? {
         /// The current implementation below reads /proc/self/stat. Then,
         /// presumably to accommodate whitespace in the `comm` field
@@ -532,6 +540,7 @@ public enum SystemMetrics {
     #warning("System Metrics are not implemented on non-Linux platforms yet.")
     #endif
 
+    @Sendable
     internal static func noopSystemMetrics() -> SystemMetrics.Data? {
         nil
     }
