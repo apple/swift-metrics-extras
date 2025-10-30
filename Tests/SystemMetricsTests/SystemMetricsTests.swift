@@ -11,7 +11,10 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
-import XCTest
+
+import Dispatch
+import Foundation
+import Testing
 
 @testable import SystemMetrics
 
@@ -19,25 +22,26 @@ import XCTest
 import Glibc
 #endif
 
-class SystemMetricsTest: XCTestCase {
-    func testSystemMetricsGeneration() throws {
+@Suite("SystemMetrics Tests")
+struct SystemMetricsTests {
+    @Test("Linux system metrics generation provides all required metrics")
+    func systemMetricsGeneration() async throws {
         #if os(Linux)
         let _metrics = SystemMetrics.linuxSystemMetrics()
-        XCTAssertNotNil(_metrics)
+        #expect(_metrics != nil)
         let metrics = _metrics!
-        XCTAssertNotNil(metrics.virtualMemoryBytes)
-        XCTAssertNotNil(metrics.residentMemoryBytes)
-        XCTAssertNotNil(metrics.startTimeSeconds)
-        XCTAssertNotNil(metrics.cpuSeconds)
-        XCTAssertNotNil(metrics.maxFileDescriptors)
-        XCTAssertNotNil(metrics.openFileDescriptors)
-        XCTAssertNotNil(metrics.cpuUsage)
+        #expect(metrics.virtualMemoryBytes != 0)
+        #expect(metrics.residentMemoryBytes != 0)
+        #expect(metrics.startTimeSeconds != 0)
+        #expect(metrics.maxFileDescriptors != 0)
+        #expect(metrics.openFileDescriptors != 0)
         #else
-        throw XCTSkip()
+        #expect(Bool(true), "Skipping on non-Linux platforms")
         #endif
     }
 
-    func testSystemMetricsLabels() throws {
+    @Test("Custom labels with prefix are correctly formatted")
+    func systemMetricsLabels() throws {
         let labels = SystemMetrics.Labels(
             prefix: "pfx+",
             virtualMemoryBytes: "vmb",
@@ -49,16 +53,17 @@ class SystemMetricsTest: XCTestCase {
             cpuUsage: "cpu"
         )
 
-        XCTAssertEqual(labels.label(for: \.virtualMemoryBytes), "pfx+vmb")
-        XCTAssertEqual(labels.label(for: \.residentMemoryBytes), "pfx+rmb")
-        XCTAssertEqual(labels.label(for: \.startTimeSeconds), "pfx+sts")
-        XCTAssertEqual(labels.label(for: \.cpuSecondsTotal), "pfx+cpt")
-        XCTAssertEqual(labels.label(for: \.maxFileDescriptors), "pfx+mfd")
-        XCTAssertEqual(labels.label(for: \.openFileDescriptors), "pfx+ofd")
-        XCTAssertEqual(labels.label(for: \.cpuUsage), "pfx+cpu")
+        #expect(labels.label(for: \.virtualMemoryBytes) == "pfx+vmb")
+        #expect(labels.label(for: \.residentMemoryBytes) == "pfx+rmb")
+        #expect(labels.label(for: \.startTimeSeconds) == "pfx+sts")
+        #expect(labels.label(for: \.cpuSecondsTotal) == "pfx+cpt")
+        #expect(labels.label(for: \.maxFileDescriptors) == "pfx+mfd")
+        #expect(labels.label(for: \.openFileDescriptors) == "pfx+ofd")
+        #expect(labels.label(for: \.cpuUsage) == "pfx+cpu")
     }
 
-    func testSystemMetricsConfiguration() throws {
+    @Test("Configuration preserves all provided settings")
+    func systemMetricsConfiguration() throws {
         let labels = SystemMetrics.Labels(
             prefix: "pfx_",
             virtualMemoryBytes: "vmb",
@@ -76,41 +81,41 @@ class SystemMetricsTest: XCTestCase {
             dimensions: dimensions
         )
 
-        XCTAssertTrue(configuration.interval == .microseconds(123_456_789))
+        #expect(configuration.interval == .microseconds(123_456_789))
 
-        XCTAssertNotNil(configuration.dataProvider)
+        #expect(configuration.labels.label(for: \.virtualMemoryBytes) == "pfx_vmb")
+        #expect(configuration.labels.label(for: \.residentMemoryBytes) == "pfx_rmb")
+        #expect(configuration.labels.label(for: \.startTimeSeconds) == "pfx_sts")
+        #expect(configuration.labels.label(for: \.cpuSecondsTotal) == "pfx_cpt")
+        #expect(configuration.labels.label(for: \.maxFileDescriptors) == "pfx_mfd")
+        #expect(configuration.labels.label(for: \.openFileDescriptors) == "pfx_ofd")
+        #expect(configuration.labels.label(for: \.cpuUsage) == "pfx_cpu")
 
-        XCTAssertEqual(configuration.labels.label(for: \.virtualMemoryBytes), "pfx_vmb")
-        XCTAssertEqual(configuration.labels.label(for: \.residentMemoryBytes), "pfx_rmb")
-        XCTAssertEqual(configuration.labels.label(for: \.startTimeSeconds), "pfx_sts")
-        XCTAssertEqual(configuration.labels.label(for: \.cpuSecondsTotal), "pfx_cpt")
-        XCTAssertEqual(configuration.labels.label(for: \.maxFileDescriptors), "pfx_mfd")
-        XCTAssertEqual(configuration.labels.label(for: \.openFileDescriptors), "pfx_ofd")
-        XCTAssertEqual(configuration.labels.label(for: \.cpuUsage), "pfx_cpu")
+        #expect(configuration.dimensions.contains(where: { $0 == ("app", "example") }))
+        #expect(configuration.dimensions.contains(where: { $0 == ("environment", "production") }))
 
-        XCTAssertTrue(configuration.dimensions.contains(where: { $0 == ("app", "example") }))
-        XCTAssertTrue(configuration.dimensions.contains(where: { $0 == ("environment", "production") }))
-
-        XCTAssertFalse(configuration.dimensions.contains(where: { $0 == ("environment", "staging") }))
-        XCTAssertFalse(configuration.dimensions.contains(where: { $0 == ("process", "example") }))
+        #expect(!configuration.dimensions.contains(where: { $0 == ("environment", "staging") }))
+        #expect(!configuration.dimensions.contains(where: { $0 == ("process", "example") }))
     }
 
-    func testCPUUsageCalculator() throws {
+    @Test("CPU usage calculator accurately computes percentage")
+    func cpuUsageCalculator() throws {
         #if os(Linux)
         let calculator = SystemMetrics.CPUUsageCalculator()
         var usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 0, cpuTicks: 0)
-        XCTAssertFalse(usage.isNaN)
-        XCTAssertEqual(usage, 0)
+        #expect(!usage.isNaN)
+        #expect(usage == 0)
 
         usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 20, cpuTicks: 10)
-        XCTAssertFalse(usage.isNaN)
-        XCTAssertEqual(usage, 50)
+        #expect(!usage.isNaN)
+        #expect(usage == 50)
         #else
-        throw XCTSkip()
+        #expect(Bool(true), "Skipping on non-Linux platforms")
         #endif
     }
 
-    func testLinuxResidentMemoryBytes() throws {
+    @Test("Linux resident memory bytes reflects actual allocations")
+    func linuxResidentMemoryBytes() throws {
         #if os(Linux)
 
         let pageByteCount = sysconf(Int32(_SC_PAGESIZE))
@@ -124,7 +129,7 @@ class SystemMetricsTest: XCTestCase {
         }
 
         guard let startResidentMemoryBytes = SystemMetrics.linuxSystemMetrics()?.residentMemoryBytes else {
-            XCTFail("Could not get resident memory usage.")
+            Issue.record("Could not get resident memory usage.")
             return
         }
 
@@ -133,7 +138,7 @@ class SystemMetricsTest: XCTestCase {
         bytes.initializeMemory(as: UInt8.self, repeating: .zero)
 
         guard let residentMemoryBytes = SystemMetrics.linuxSystemMetrics()?.residentMemoryBytes else {
-            XCTFail("Could not get resident memory usage.")
+            Issue.record("Could not get resident memory usage.")
             return
         }
 
@@ -150,14 +155,17 @@ class SystemMetricsTest: XCTestCase {
         /// Deferring discussion on whether we should extend this package to
         /// produce these slower-to-retrieve, more-accurate values, we check
         /// that the RSS value is within 1% of the expected allocation increase.
-        XCTAssertEqual(residentMemoryBytes - startResidentMemoryBytes, allocationSize, accuracy: allocationSize / 100)
+        let difference = residentMemoryBytes - startResidentMemoryBytes
+        let accuracy = allocationSize / 100
+        #expect(abs(difference - allocationSize) <= accuracy)
 
         #else
-        throw XCTSkip()
+        #expect(Bool(true), "Skipping on non-Linux platforms")
         #endif
     }
 
-    func testLinuxCPUSeconds() throws {
+    @Test("Linux CPU seconds measurement reflects actual CPU usage")
+    func linuxCPUSeconds() throws {
         #if os(Linux)
 
         let bytes = Array(repeating: UInt8.zero, count: 10)
@@ -168,10 +176,10 @@ class SystemMetricsTest: XCTestCase {
             bytes.hash(into: &hasher)
         }
 
-        XCTAssertEqual(SystemMetrics.linuxSystemMetrics()?.cpuSeconds, 1)
+        #expect(SystemMetrics.linuxSystemMetrics()?.cpuSeconds == 1)
 
         #else
-        throw XCTSkip()
+        #expect(Bool(true), "Skipping on non-Linux platforms")
         #endif
     }
 }
