@@ -11,6 +11,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+
 import CoreMetrics
 import Dispatch
 
@@ -19,6 +20,7 @@ import Glibc
 #endif
 
 /// A thread-safe wrapper for the global system metrics provider.
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 private final class SystemMetricsProviderContainer: @unchecked Sendable {
 
     /// The underlying system metrics provider.
@@ -37,6 +39,7 @@ private final class SystemMetricsProviderContainer: @unchecked Sendable {
     }
 }
 
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension MetricsSystem {
 
     /// A thread-safe container for the global system metrics provider.
@@ -65,62 +68,45 @@ extension MetricsSystem {
     }
 
     internal class SystemMetricsProvider {
-        fileprivate let queue = DispatchQueue(label: "com.apple.CoreMetrics.SystemMetricsHandler", qos: .background)
-        fileprivate let timeInterval: DispatchTimeInterval
-        fileprivate let dataProvider: SystemMetrics.DataProvider
-        fileprivate let labels: SystemMetrics.Labels
-        fileprivate let dimensions: [(String, String)]
-        fileprivate let timer: DispatchSourceTimer
+        fileprivate var timerTask: Task<Void, Never>
 
         init(config: SystemMetrics.Configuration) {
-            self.timeInterval = config.interval
-            self.dataProvider = config.dataProvider
-            self.labels = config.labels
-            self.dimensions = config.dimensions
-            self.timer = DispatchSource.makeTimerSource(queue: self.queue)
-
-            self.timer.setEventHandler(
-                handler: DispatchWorkItem(block: { [weak self] in
-                    guard let self = self, let metrics = self.dataProvider() else { return }
-                    Gauge(label: self.labels.label(for: \.virtualMemoryBytes), dimensions: self.dimensions).record(
+            timerTask = Task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: config.interval)
+                    guard let metrics = config.dataProvider() else { continue }
+                    Gauge(label: config.labels.label(for: \.virtualMemoryBytes), dimensions: config.dimensions).record(
                         metrics.virtualMemoryBytes
                     )
-                    Gauge(label: self.labels.label(for: \.residentMemoryBytes), dimensions: self.dimensions).record(
+                    Gauge(label: config.labels.label(for: \.residentMemoryBytes), dimensions: config.dimensions).record(
                         metrics.residentMemoryBytes
                     )
-                    Gauge(label: self.labels.label(for: \.startTimeSeconds), dimensions: self.dimensions).record(
+                    Gauge(label: config.labels.label(for: \.startTimeSeconds), dimensions: config.dimensions).record(
                         metrics.startTimeSeconds
                     )
-                    Gauge(label: self.labels.label(for: \.cpuSecondsTotal), dimensions: self.dimensions).record(
+                    Gauge(label: config.labels.label(for: \.cpuSecondsTotal), dimensions: config.dimensions).record(
                         metrics.cpuSeconds
                     )
-                    Gauge(label: self.labels.label(for: \.maxFileDescriptors), dimensions: self.dimensions).record(
+                    Gauge(label: config.labels.label(for: \.maxFileDescriptors), dimensions: config.dimensions).record(
                         metrics.maxFileDescriptors
                     )
-                    Gauge(label: self.labels.label(for: \.openFileDescriptors), dimensions: self.dimensions).record(
+                    Gauge(label: config.labels.label(for: \.openFileDescriptors), dimensions: config.dimensions).record(
                         metrics.openFileDescriptors
                     )
-                    Gauge(label: self.labels.label(for: \.cpuUsage), dimensions: self.dimensions).record(
+                    Gauge(label: config.labels.label(for: \.cpuUsage), dimensions: config.dimensions).record(
                         metrics.cpuUsage
                     )
-                })
-            )
-
-            self.timer.schedule(deadline: .now() + self.timeInterval, repeating: self.timeInterval)
-
-            if #available(OSX 10.12, *) {
-                self.timer.activate()
-            } else {
-                self.timer.resume()
+                }
             }
         }
 
         deinit {
-            self.timer.cancel()
+            timerTask.cancel()
         }
     }
 }
 
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 public enum SystemMetrics: Sendable {
     /// Provider used by `SystemMetrics` to get the requested `SystemMetrics.Data`.
     ///
@@ -132,7 +118,7 @@ public enum SystemMetrics: Sendable {
     /// Backend implementations are encouraged to extend `SystemMetrics.Configuration` with a static extension with
     /// defaults that suit their specific backend needs.
     public struct Configuration: Sendable {
-        let interval: DispatchTimeInterval
+        let interval: Duration
         let dataProvider: SystemMetrics.DataProvider
         let labels: SystemMetrics.Labels
         let dimensions: [(String, String)]
@@ -146,8 +132,33 @@ public enum SystemMetrics: Sendable {
         ///                     on all other platforms.
         ///     - labels: The labels to use for generated system metrics.
         ///     - dimensions: The dimensions to include in generated system metrics.
+        @_disfavoredOverload
+        @available(*, deprecated, message: "Create `Configuration` with `Duration` parameter instead.")
         public init(
             pollInterval interval: DispatchTimeInterval = .seconds(2),
+            dataProvider: SystemMetrics.DataProvider? = nil,
+            labels: Labels,
+            dimensions: [(String, String)] = []
+        ) {
+            self.init(
+                pollInterval: interval.asDuration,
+                dataProvider: dataProvider,
+                labels: labels,
+                dimensions: dimensions
+            )
+        }
+
+        /// Create new instance of `SystemMetricsOptions`
+        ///
+        /// - parameters:
+        ///     - interval: The interval at which system metrics should be updated.
+        ///     - dataProvider: The provider to get SystemMetrics data from. If none is provided this defaults to
+        ///                     `SystemMetrics.linuxSystemMetrics` on Linux platforms and `SystemMetrics.noopSystemMetrics`
+        ///                     on all other platforms.
+        ///     - labels: The labels to use for generated system metrics.
+        ///     - dimensions: The dimensions to include in generated system metrics.
+        public init(
+            pollInterval interval: Duration = .seconds(2),
             dataProvider: SystemMetrics.DataProvider? = nil,
             labels: Labels,
             dimensions: [(String, String)] = []
