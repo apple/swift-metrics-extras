@@ -1,4 +1,4 @@
-// swift-tools-version:5.10
+// swift-tools-version:6.0
 //===----------------------------------------------------------------------===//
 //
 // This source file is part of the Swift Metrics API open source project
@@ -42,6 +42,10 @@ let package = Package(
 for target in package.targets {
     var settings = target.swiftSettings ?? []
     settings.append(.enableExperimentalFeature("StrictConcurrency=complete"))
+
+    // This is a workaround for `DispatchSourceTimer` crash with 6.0 toolchain
+    settings.append(.swiftLanguageMode(.v5))
+
     target.swiftSettings = settings
 }
 
