@@ -176,7 +176,12 @@ struct SystemMetricsTests {
             bytes.hash(into: &hasher)
         }
 
-        #expect(SystemMetrics.linuxSystemMetrics()?.cpuSeconds == 1)
+        let metrics = SystemMetrics.linuxSystemMetrics()
+        #expect(metrics != nil)
+
+        // We can only set expectations for the lower limit for the CPU usage time,
+        // other threads executing other tests can add more CPU usage
+        #expect(metrics!.cpuSeconds > 0)
 
         #else
         #expect(Bool(true), "Skipping on non-Linux platforms")
