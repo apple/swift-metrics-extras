@@ -28,10 +28,10 @@ extension DispatchTimeInterval {
             .nanoseconds(value)
         case .never:
             .seconds(.infinity)
-#if compiler(>=6.0)
+        #if compiler(>=6.0)
         @unknown default:
             .seconds(2)
-#endif
+        #endif
         }
     }
 }
