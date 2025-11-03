@@ -71,7 +71,7 @@ extension MetricsSystem {
         fileprivate var timerTask: Task<Void, Never>
 
         init(config: SystemMetrics.Configuration) {
-            timerTask = Task {
+            timerTask = Task.detached {
                 while !Task.isCancelled {
                     try? await Task.sleep(for: config.interval)
                     guard let metrics = config.dataProvider() else { continue }
