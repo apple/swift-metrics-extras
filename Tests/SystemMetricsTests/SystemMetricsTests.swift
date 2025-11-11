@@ -16,7 +16,7 @@ import Dispatch
 import Foundation
 import Testing
 
-@testable import SystemMetrics
+import SystemMetrics
 
 #if canImport(Glibc)
 import Glibc

@@ -96,7 +96,7 @@ extension SystemMetricsMonitor {
     /// CPU usage is calculated as the number of CPU ticks used by this process between measurements.
     /// - Note: the first measurement will be calculated since the process' start time, since there's no
     /// previous measurement to take as reference.
-    internal final class CPUUsageCalculator: @unchecked Sendable {
+    package final class CPUUsageCalculator: @unchecked Sendable {
         /// The number of ticks after system boot that the last CPU usage stat was taken.
         private var locked_previousTicksSinceSystemBoot: Int = 0
         /// The number of ticks the process actively used the CPU for, as of the previous CPU usage measurement.
@@ -144,7 +144,7 @@ extension SystemMetricsMonitor {
     private static let cpuUsageCalculator = CPUUsageCalculator()
     
     @Sendable
-    internal static func linuxSystemMetrics() -> SystemMetricsMonitor.Data? {
+    package static func linuxSystemMetrics() -> SystemMetricsMonitor.Data? {
         /// The current implementation below reads /proc/self/stat. Then,
         /// presumably to accommodate whitespace in the `comm` field
         /// without dealing with null-terminated C strings, it splits on the

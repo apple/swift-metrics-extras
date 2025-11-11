@@ -20,21 +20,21 @@ extension SystemMetricsMonitor {
     /// defaults that suit their specific backend needs.
     public struct Labels: Sendable {
         /// Prefix to prefix all other labels with.
-        let prefix: String
+        package let prefix: String
         /// Virtual memory size in bytes.
-        let virtualMemoryBytes: String
+        package let virtualMemoryBytes: String
         /// Resident memory size in bytes.
-        let residentMemoryBytes: String
+        package let residentMemoryBytes: String
         /// Total user and system CPU time spent in seconds.
-        let startTimeSeconds: String
+        package         let startTimeSeconds: String
         /// Total user and system CPU time spent in seconds.
-        let cpuSecondsTotal: String
+        package let cpuSecondsTotal: String
         /// Maximum number of open file descriptors.
-        let maxFileDescriptors: String
+        package let maxFileDescriptors: String
         /// Number of open file descriptors.
-        let openFileDescriptors: String
+        package let openFileDescriptors: String
         /// CPU usage percentage.
-        let cpuUsage: String
+        package let cpuUsage: String
 
         /// Create a new `Labels` instance.
         ///
@@ -67,15 +67,15 @@ extension SystemMetricsMonitor {
             self.cpuUsage = cpuUsage
         }
 
-        func label(for keyPath: KeyPath<Labels, String>) -> String {
+        package func label(for keyPath: KeyPath<Labels, String>) -> String {
             self.prefix + self[keyPath: keyPath]
         }
     }
     
     public struct Configuration: Sendable {
-        let interval: Duration
-        let labels: SystemMetricsMonitor.Labels
-        let dimensions: [(String, String)]
+        package let interval: Duration
+        package let labels: SystemMetricsMonitor.Labels
+        package let dimensions: [(String, String)]
 
         /// Create new instance of `SystemMetricsOptions`
         ///
