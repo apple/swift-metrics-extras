@@ -15,6 +15,7 @@
 #if os(macOS)
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension SystemMetricsMonitor {
+    /// Collect current system metrics data on macOS.
     func collectMetricsData() -> SystemMetricsMonitor.Data? {
 #warning("System Metrics are not implemented on non-Linux platforms yet.")
         return nil

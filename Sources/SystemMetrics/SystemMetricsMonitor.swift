@@ -15,21 +15,66 @@ import AsyncAlgorithms
 import Foundation
 import CoreMetrics
 
+/// A monitor that periodically collects and reports system metrics.
+///
+/// `SystemMetricsMonitor` provides a way to automatically collect process-level system metrics
+/// (such as memory usage, CPU time) and report them through the Swift Metrics API.
+///
+/// Example usage:
+/// ```swift
+/// let labels = SystemMetricsMonitor.Labels(
+///     prefix: "process_",
+///     virtualMemoryBytes: "virtual_memory_bytes",
+///     residentMemoryBytes: "resident_memory_bytes",
+///     startTimeSeconds: "start_time_seconds",
+///     cpuSecondsTotal: "cpu_seconds_total",
+///     maxFds: "max_fds",
+///     openFds: "open_fds",
+///     cpuUsage: "cpu_usage"
+/// )
+/// let configuration = SystemMetricsMonitor.Configuration(
+///     pollInterval: .seconds(2),
+///     labels: labels
+/// )
+/// let monitor = SystemMetricsMonitor(configuration: configuration)
+/// try await monitor.run()
+/// ```
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 public struct SystemMetricsMonitor {
+    /// Configuration for the system metrics monitor.
     let configuration: SystemMetricsMonitor.Configuration
+
+    /// Optional metrics factory for testing. If nil, uses `MetricsSystem.factory`.
     let metricsFactory: MetricsFactory?
-    
+
+    /// Create a new `SystemMetricsMonitor` with a custom metrics factory.
+    ///
+    /// This initializer is primarily useful for testing, allowing you to inject
+    /// a custom metrics factory instead of using the global `MetricsSystem.factory`.
+    ///
+    /// - Parameters:
+    ///   - configuration: The configuration for the monitor.
+    ///   - metricsFactory: The metrics factory to use for creating metrics.
     init(configuration: SystemMetricsMonitor.Configuration, metricsFactory: MetricsFactory) {
         self.configuration = configuration
         self.metricsFactory = metricsFactory
     }
 
+    /// Create a new `SystemMetricsMonitor` using the global metrics factory.
+    ///
+    /// - Parameters:
+    ///   - configuration: The configuration for the monitor.
     init(configuration: SystemMetricsMonitor.Configuration) {
         self.configuration = configuration
         self.metricsFactory = nil
     }
-    
+
+    /// Collect and report system metrics once.
+    ///
+    /// This method collects current system metrics and reports them as gauges
+    /// using the configured labels and dimensions. If metric collection fails
+    /// or is unsupported on the current platform, this method returns without
+    /// reporting any metrics.
     package func updateMetrics() async throws {
         guard let metrics = self.collectMetricsData() else { return }
         let effectiveMetricsFactory = self.metricsFactory ?? MetricsSystem.factory
@@ -55,7 +100,12 @@ public struct SystemMetricsMonitor {
             metrics.cpuUsage
         )
     }
-    
+
+    /// Start the monitoring loop, collecting and reporting metrics at the configured interval.
+    ///
+    /// This method runs indefinitely, periodically collecting and reporting system metrics
+    /// according to the poll interval specified in the configuration. It will only return
+    /// if the async task is cancelled.
     func run() async throws {
         for await _ in AsyncTimerSequence(interval: self.configuration.interval, clock: .continuous) {
             try await self.updateMetrics()
