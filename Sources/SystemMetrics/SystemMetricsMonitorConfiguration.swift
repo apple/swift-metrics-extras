@@ -26,7 +26,7 @@ extension SystemMetricsMonitor {
         /// Resident memory size in bytes.
         package let residentMemoryBytes: String
         /// Total user and system CPU time spent in seconds.
-        package         let startTimeSeconds: String
+        package let startTimeSeconds: String
         /// Total user and system CPU time spent in seconds.
         package let cpuSecondsTotal: String
         /// Maximum number of open file descriptors.
@@ -71,7 +71,7 @@ extension SystemMetricsMonitor {
             self.prefix + self[keyPath: keyPath]
         }
     }
-    
+
     public struct Configuration: Sendable {
         package let interval: Duration
         package let labels: SystemMetricsMonitor.Labels

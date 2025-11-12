@@ -57,7 +57,8 @@ struct LinuxDataProviderTests {
             bytes.initializeMemory(as: UInt8.self, repeating: .zero)
         }
 
-        guard let startResidentMemoryBytes = SystemMetricsMonitorDataProvider.linuxSystemMetrics()?.residentMemoryBytes else {
+        guard let startResidentMemoryBytes = SystemMetricsMonitorDataProvider.linuxSystemMetrics()?.residentMemoryBytes
+        else {
             Issue.record("Could not get resident memory usage.")
             return
         }
@@ -66,7 +67,8 @@ struct LinuxDataProviderTests {
         defer { bytes.deallocate() }
         bytes.initializeMemory(as: UInt8.self, repeating: .zero)
 
-        guard let residentMemoryBytes = SystemMetricsMonitorDataProvider.linuxSystemMetrics()?.residentMemoryBytes else {
+        guard let residentMemoryBytes = SystemMetricsMonitorDataProvider.linuxSystemMetrics()?.residentMemoryBytes
+        else {
             Issue.record("Could not get resident memory usage.")
             return
         }

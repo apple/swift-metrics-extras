@@ -21,7 +21,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     ///         This method always returns `nil`.
     /// - Returns: `nil` until macOS support is implemented.
     package func data() async -> SystemMetricsMonitor.Data? {
-#warning("System Metrics are not implemented on non-Linux platforms yet.")
+        #warning("System Metrics are not implemented on non-Linux platforms yet.")
         return nil
     }
 }

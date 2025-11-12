@@ -24,24 +24,24 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     /// Designed only for the narrow use case of this library.
     final class CFile {
         let path: String
-        
+
         private var file: UnsafeMutablePointer<FILE>?
-        
+
         init(_ path: String) {
             self.path = path
         }
-        
+
         deinit {
             assert(self.file == nil)
         }
-        
+
         func open() {
             guard let f = fopen(path, "r") else {
                 return
             }
             self.file = f
         }
-        
+
         func close() {
             if let f = self.file {
                 self.file = nil
@@ -49,7 +49,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
                 assert(success)
             }
         }
-        
+
         func readLine() -> String? {
             guard let f = self.file else {
                 return nil
@@ -77,7 +77,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
                 return String(cString: ptr.baseAddress!)
             }
         }
-        
+
         func readFull() -> String {
             var s = ""
             func loop() -> String {
@@ -90,7 +90,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             return loop()
         }
     }
-    
+
     /// A type that can calculate CPU usage for a given process.
     ///
     /// CPU usage is calculated as the number of CPU ticks used by this process between measurements.
@@ -101,7 +101,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         private var locked_previousTicksSinceSystemBoot: Int = 0
         /// The number of ticks the process actively used the CPU for, as of the previous CPU usage measurement.
         private var locked_previousCPUTicks: Int = 0
-        
+
         func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
             MetricsSystem.withWriterLock {
                 defer {
@@ -112,13 +112,13 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
                 guard ticksBetweenMeasurements > 0 else {
                     return 0
                 }
-                
+
                 let cpuTicksBetweenMeasurements = cpuTicks - self.locked_previousCPUTicks
                 return Double(cpuTicksBetweenMeasurements) * 100 / Double(ticksBetweenMeasurements)
             }
         }
     }
-    
+
     private static let systemStartTimeInSecondsSinceEpoch: Int? = {
         let systemStatFile = CFile("/proc/stat")
         systemStatFile.open()
@@ -127,20 +127,20 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         }
         while let line = systemStatFile.readLine() {
             if line.starts(with: "btime"),
-               let systemUptimeInSecondsSinceEpochString =
-                line
-                .split(separator: " ")
-                .last?
-                .split(separator: "\n")
-                .first,
-               let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString)
+                let systemUptimeInSecondsSinceEpochString =
+                    line
+                    .split(separator: " ")
+                    .last?
+                    .split(separator: "\n")
+                    .first,
+                let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString)
             {
                 return systemUptimeInSecondsSinceEpoch
             }
         }
         return nil
     }()
-    
+
     private static let cpuUsageCalculator = CPUUsageCalculator()
 
     /// Collect current system metrics data.
@@ -230,7 +230,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             static let utimeTicks = 11
             static let stimeTicks = 12
         }
-        
+
         /// Some of the metrics from procfs need to be combined with system
         /// values, which we obtain from sysconf(3). These values do not change
         /// during the lifetime of the process so we define them as static
@@ -239,23 +239,23 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             static let clockTicksPerSecond = sysconf(Int32(_SC_CLK_TCK))
             static let pageByteCount = sysconf(Int32(_SC_PAGESIZE))
         }
-        
+
         let statFile = CFile("/proc/self/stat")
         statFile.open()
         defer {
             statFile.close()
         }
-        
+
         let uptimeFile = CFile("/proc/uptime")
         uptimeFile.open()
         defer {
             uptimeFile.close()
         }
-        
+
         // Read both files as close as possible to each other to get an accurate CPU usage metric.
         let statFileContents = statFile.readFull()
         let uptimeFileContents = uptimeFile.readFull()
-        
+
         guard
             let statString =
                 statFileContents
@@ -272,22 +272,22 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             let utimeTicks = Int(stats[safe: StatIndices.utimeTicks]),
             let stimeTicks = Int(stats[safe: StatIndices.stimeTicks])
         else { return nil }
-        
+
         let residentMemoryBytes = rss * SystemConfiguration.pageByteCount
         let processStartTimeInSeconds = startTimeTicks / SystemConfiguration.clockTicksPerSecond
         let cpuTicks = utimeTicks + stimeTicks
         let cpuSeconds = cpuTicks / SystemConfiguration.clockTicksPerSecond
-        
+
         guard let systemStartTimeInSecondsSinceEpoch = SystemMetricsMonitor.systemStartTimeInSecondsSinceEpoch else {
             return nil
         }
         let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
-        
+
         var cpuUsage: Double = 0
         if cpuTicks > 0 {
             guard let uptimeString = uptimeFileContents.split(separator: " ").first,
-                  let uptimeSeconds = Float(uptimeString),
-                  uptimeSeconds.isFinite
+                let uptimeSeconds = Float(uptimeString),
+                uptimeSeconds.isFinite
             else { return nil }
             let uptimeTicks = Int(ceilf(uptimeSeconds)) * SystemConfiguration.clockTicksPerSecond
             cpuUsage = SystemMetricsMonitor.cpuUsageCalculator.getUsagePercentage(
@@ -295,7 +295,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
                 cpuTicks: cpuTicks
             )
         }
-        
+
         var _rlim = rlimit()
         guard
             withUnsafeMutablePointer(
@@ -309,16 +309,16 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
                 }
             )
         else { return nil }
-        
+
         let maxFileDescriptors = Int(_rlim.rlim_max)
-        
+
         guard let dir = opendir("/proc/self/fd") else { return nil }
         defer {
             closedir(dir)
         }
         var openFileDescriptors = 0
         while readdir(dir) != nil { openFileDescriptors += 1 }
-        
+
         return .init(
             virtualMemoryBytes: virtualMemoryBytes,
             residentMemoryBytes: residentMemoryBytes,

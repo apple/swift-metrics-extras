@@ -12,8 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 import AsyncAlgorithms
-import Foundation
 import CoreMetrics
+import Foundation
 
 /// A protocol for providing system metrics data.
 ///
@@ -115,25 +115,53 @@ public struct SystemMetricsMonitor {
     package func updateMetrics() async throws {
         guard let metrics = await self.dataProvider.data() else { return }
         let effectiveMetricsFactory = self.metricsFactory ?? MetricsSystem.factory
-        Gauge(label: self.configuration.labels.label(for: \.virtualMemoryBytes), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
+        Gauge(
+            label: self.configuration.labels.label(for: \.virtualMemoryBytes),
+            dimensions: self.configuration.dimensions,
+            factory: effectiveMetricsFactory
+        ).record(
             metrics.virtualMemoryBytes
         )
-        Gauge(label: self.configuration.labels.label(for: \.residentMemoryBytes), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
+        Gauge(
+            label: self.configuration.labels.label(for: \.residentMemoryBytes),
+            dimensions: self.configuration.dimensions,
+            factory: effectiveMetricsFactory
+        ).record(
             metrics.residentMemoryBytes
         )
-        Gauge(label: self.configuration.labels.label(for: \.startTimeSeconds), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
+        Gauge(
+            label: self.configuration.labels.label(for: \.startTimeSeconds),
+            dimensions: self.configuration.dimensions,
+            factory: effectiveMetricsFactory
+        ).record(
             metrics.startTimeSeconds
         )
-        Gauge(label: self.configuration.labels.label(for: \.cpuSecondsTotal), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
+        Gauge(
+            label: self.configuration.labels.label(for: \.cpuSecondsTotal),
+            dimensions: self.configuration.dimensions,
+            factory: effectiveMetricsFactory
+        ).record(
             metrics.cpuSeconds
         )
-        Gauge(label: self.configuration.labels.label(for: \.maxFileDescriptors), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
+        Gauge(
+            label: self.configuration.labels.label(for: \.maxFileDescriptors),
+            dimensions: self.configuration.dimensions,
+            factory: effectiveMetricsFactory
+        ).record(
             metrics.maxFileDescriptors
         )
-        Gauge(label: self.configuration.labels.label(for: \.openFileDescriptors), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
+        Gauge(
+            label: self.configuration.labels.label(for: \.openFileDescriptors),
+            dimensions: self.configuration.dimensions,
+            factory: effectiveMetricsFactory
+        ).record(
             metrics.openFileDescriptors
         )
-        Gauge(label: self.configuration.labels.label(for: \.cpuUsage), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
+        Gauge(
+            label: self.configuration.labels.label(for: \.cpuUsage),
+            dimensions: self.configuration.dimensions,
+            factory: effectiveMetricsFactory
+        ).record(
             metrics.cpuUsage
         )
     }
@@ -184,7 +212,7 @@ extension SystemMetricsMonitor {
         var openFileDescriptors: Int
         /// CPU usage percentage.
         var cpuUsage: Double
-        
+
         /// Create a new `Data` instance.
         ///
         /// - parameters:
