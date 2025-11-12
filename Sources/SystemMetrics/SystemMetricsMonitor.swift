@@ -73,7 +73,7 @@ public struct SystemMetricsMonitor {
     ///   - configuration: The configuration for the monitor.
     ///   - metricsFactory: The metrics factory to use for creating metrics.
     ///   - dataProvider: The provider to use for collecting system metrics data.
-    public init(
+    package init(
         configuration: SystemMetricsMonitor.Configuration,
         metricsFactory: MetricsFactory,
         dataProvider: SystemMetricsProvider
@@ -88,10 +88,21 @@ public struct SystemMetricsMonitor {
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - dataProvider: The provider to use for collecting system metrics data.
-    public init(configuration: SystemMetricsMonitor.Configuration, dataProvider: SystemMetricsProvider) {
+    package init(configuration: SystemMetricsMonitor.Configuration, dataProvider: SystemMetricsProvider) {
         self.configuration = configuration
         self.metricsFactory = nil
         self.dataProvider = dataProvider
+    }
+
+    /// Create a new `SystemMetricsMonitor` with a custom metrics factory.
+    ///
+    /// - Parameters:
+    ///   - configuration: The configuration for the monitor.
+    ///   - metricsFactory: The metrics factory to use for creating metrics.
+    package init(configuration: SystemMetricsMonitor.Configuration, metricsFactory: MetricsFactory) {
+        self.configuration = configuration
+        self.metricsFactory = metricsFactory
+        self.dataProvider = SystemMetricsMonitorDataProvider(configuration: configuration)
     }
 
     /// Create a new `SystemMetricsMonitor` using the global metrics factory.
@@ -101,9 +112,7 @@ public struct SystemMetricsMonitor {
     public init(configuration: SystemMetricsMonitor.Configuration) {
         self.configuration = configuration
         self.metricsFactory = nil
-        // Create a temporary instance to use as the default provider
-        let temp = SystemMetricsMonitorDataProvider(configuration: configuration)
-        self.dataProvider = temp
+        self.dataProvider = SystemMetricsMonitorDataProvider(configuration: configuration)
     }
 
     /// Collect and report system metrics once.

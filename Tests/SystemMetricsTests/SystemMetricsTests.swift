@@ -303,6 +303,45 @@ struct SystemMetricsTests {
         let vmbGauge = try testMetrics.expectGauge("test_vmb")
         #expect(vmbGauge.lastValue == 1000)
     }
+
+    @Test("Monitor with default provider uses platform implementation")
+    func monitorWithDefaultProvider() async throws {
+        let testMetrics = TestMetrics()
+
+        let labels = SystemMetricsMonitor.Labels(
+            prefix: "test_",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
+
+        let configuration = SystemMetricsMonitor.Configuration(
+            pollInterval: .seconds(1),
+            labels: labels
+        )
+
+        // No custom provider - uses SystemMetricsMonitorDataProvider internally
+        let monitor = SystemMetricsMonitor(configuration: configuration, metricsFactory: testMetrics)
+
+        try await monitor.updateMetrics()
+
+        #if os(Linux)
+        let vmbGauge = try testMetrics.expectGauge("test_vmb")
+        #expect(vmbGauge.lastValue != nil)
+        #expect(vmbGauge.lastValue! > 0)
+        #else
+        // On macOS, the provider returns nil, so no metrics should be recorded
+        #expect(
+            !testMetrics.recorders.contains(where: { recorder in
+                recorder.label == "test_vmb"
+            })
+        )
+        #endif
+    }
 }
 
 @Suite("SystemMetrics with MetricsSystem Initialization Tests", .serialized)
