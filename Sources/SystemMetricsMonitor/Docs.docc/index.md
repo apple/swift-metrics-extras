@@ -121,3 +121,39 @@ This enables users to configure the monitor with minimal boilerplate:
 let monitor = SystemMetricsMonitor(configuration: .prometheus, metricsFactory: myPrometheusMetricsFactory)
 try await monitor.run()
 ```
+
+## Swift Service Lifecycle Integration
+
+[swift-service-lifecycle](https://github.com/swift-server/swift-service-lifecycle) provides a convinient way of managing background service tasks, which is compatible with the `SystemMetricsMonitor`:
+
+```swift
+import SystemMetricsMonitor
+import ServiceLifecycle
+import UnixSignals
+import Metrics
+
+extension SystemMetricsMonitor: Service {
+    // SystemMetricsMonitor already conforms to the Service protocol
+}
+
+@main
+struct Application {
+    static let logger = Logger(label: "Application")
+    static let metrics = MyMetricsBackendImplementation()
+    
+    static func main() async throws {
+        MetricsSystem.bootstrap(metrics)
+
+        let service = FooService()
+        let systemMetricsMonitor = SystemMetricsMonitor(configuration: .prometheus)
+        
+        let serviceGroup = ServiceGroup(
+            services: [service, systemMetricsMonitor],
+            gracefulShutdownSignals: [.sigterm],
+            logger: logger
+        )
+        
+        try await serviceGroup.run()
+    }
+}
+```
