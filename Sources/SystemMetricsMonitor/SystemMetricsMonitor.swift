@@ -15,20 +15,6 @@ import AsyncAlgorithms
 import CoreMetrics
 import Foundation
 
-/// A protocol for providing system metrics data.
-///
-/// Types conforming to this protocol can provide system metrics data
-/// to a `SystemMetricsMonitor`. This allows for flexible data collection
-/// strategies, including custom implementations for testing.
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-public protocol SystemMetricsProvider: Sendable {
-    /// Retrieve current system metrics data.
-    ///
-    /// - Returns: Current system metrics, or `nil` if collection failed
-    ///            or is unsupported on the current platform.
-    func data() async -> SystemMetricsMonitor.Data?
-}
-
 /// A monitor that periodically collects and reports system metrics.
 ///
 /// `SystemMetricsMonitor` provides a way to automatically collect process-level system metrics
@@ -185,6 +171,20 @@ public struct SystemMetricsMonitor: Sendable {
             try await self.updateMetrics()
         }
     }
+}
+
+/// A protocol for providing system metrics data.
+///
+/// Types conforming to this protocol can provide system metrics data
+/// to a `SystemMetricsMonitor`. This allows for flexible data collection
+/// strategies, including custom implementations for testing.
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+package protocol SystemMetricsProvider: Sendable {
+    /// Retrieve current system metrics data.
+    ///
+    /// - Returns: Current system metrics, or `nil` if collection failed
+    ///            or is unsupported on the current platform.
+    func data() async -> SystemMetricsMonitor.Data?
 }
 
 /// Default implementation of `SystemMetricsProvider` for collecting system metrics data.
