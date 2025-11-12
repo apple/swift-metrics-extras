@@ -17,6 +17,9 @@ import ServiceLifecycle
 import SystemMetricsMonitor
 import UnixSignals
 
+import Metrics
+import MetricsTestKit
+
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension SystemMetricsMonitor: Service {
     // SystemMetricsMonitor already conforms to the Service protocol
@@ -26,7 +29,7 @@ extension SystemMetricsMonitor: Service {
 struct FooService: Service {
     func run() async throws {
         print("FooService starting")
-        try await Task.sleep(for: .seconds(10))
+        try await Task.sleep(for: .seconds(30))
         print("FooService done")
     }
 }
@@ -37,6 +40,10 @@ struct Application {
     static let logger = Logger(label: "Application")
 
     static func main() async throws {
+        // Bootstrap with some custom metrics backend
+        let testMetrics = TestMetrics()
+        MetricsSystem.bootstrap(testMetrics)
+        
         let service = FooService()
         let systemMetricsMonitor = SystemMetricsMonitor(configuration: .prometheus)
 
