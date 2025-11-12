@@ -19,7 +19,7 @@ import Glibc
 import Musl
 #endif
 
-extension SystemMetricsMonitor {
+extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     /// Minimal file reading implementation so we don't have to depend on Foundation.
     /// Designed only for the narrow use case of this library.
     final class CFile {
@@ -142,7 +142,24 @@ extension SystemMetricsMonitor {
     }()
     
     private static let cpuUsageCalculator = CPUUsageCalculator()
-    
+
+    /// Collect current system metrics data.
+    ///
+    /// On Linux, this delegates to the static `linuxSystemMetrics()` function.
+    ///
+    /// - Returns: Current system metrics, or `nil` if collection failed.
+    func data() async throws -> SystemMetricsMonitor.Data? {
+        Self.linuxSystemMetrics()
+    }
+
+    /// Collect system metrics data on Linux by reading `/proc` filesystem.
+    ///
+    /// This function reads process statistics from `/proc/self/stat` and system
+    /// uptime from `/proc/uptime`, then combines them with resource limits to
+    /// produce a complete snapshot of the process's resource usage.
+    ///
+    /// - Returns: A `Data` struct containing all collected metrics, or `nil` if
+    ///            metrics could not be collected (e.g., due to file read errors).
     @Sendable
     package static func linuxSystemMetrics() -> SystemMetricsMonitor.Data? {
         /// The current implementation below reads /proc/self/stat. Then,
@@ -311,15 +328,6 @@ extension SystemMetricsMonitor {
             openFileDescriptors: openFileDescriptors,
             cpuUsage: cpuUsage
         )
-    }
-    
-    /// Collect current system metrics data.
-    ///
-    /// On Linux, this delegates to the static `linuxSystemMetrics()` function.
-    ///
-    /// - Returns: Current system metrics, or `nil` if collection failed.
-    func collectMetricsData() -> SystemMetricsMonitor.Data? {
-        Self.linuxSystemMetrics()
     }
 }
 #endif

@@ -35,7 +35,8 @@ let package = Package(
         .testTarget(
             name: "SystemMetricsTests",
             dependencies: [
-                "SystemMetrics"
+                "SystemMetrics",
+                .product(name: "MetricsTestKit", package: "swift-metrics"),
             ]
         ),
     ]

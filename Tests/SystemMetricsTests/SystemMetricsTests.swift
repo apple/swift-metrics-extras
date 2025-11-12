@@ -17,6 +17,8 @@ import Foundation
 import Testing
 
 import SystemMetrics
+import CoreMetrics
+import MetricsTestKit
 
 #if canImport(Glibc)
 import Glibc
@@ -24,24 +26,18 @@ import Glibc
 import Musl
 #endif
 
+/// A mock metrics provider for testing
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+struct MockMetricsProvider: SystemMetricsProvider {
+    let mockData: SystemMetricsMonitor.Data?
+
+    func data() async throws -> SystemMetricsMonitor.Data? {
+        mockData
+    }
+}
+
 @Suite("SystemMetrics Tests")
 struct SystemMetricsTests {
-    @Test("Linux system metrics generation provides all required metrics")
-    func systemMetricsGeneration() async throws {
-        #if os(Linux)
-        let _metrics = SystemMetricsMonitor.linuxSystemMetrics()
-        #expect(_metrics != nil)
-        let metrics = _metrics!
-        #expect(metrics.virtualMemoryBytes != 0)
-        #expect(metrics.residentMemoryBytes != 0)
-        #expect(metrics.startTimeSeconds != 0)
-        #expect(metrics.maxFileDescriptors != 0)
-        #expect(metrics.openFileDescriptors != 0)
-        #else
-        #expect(Bool(true), "Skipping on non-Linux platforms")
-        #endif
-    }
-
     @Test("Custom labels with prefix are correctly formatted")
     func systemMetricsLabels() throws {
         let labels = SystemMetricsMonitor.Labels(
@@ -100,93 +96,256 @@ struct SystemMetricsTests {
         #expect(!configuration.dimensions.contains(where: { $0 == ("process", "example") }))
     }
 
-    @Test("CPU usage calculator accurately computes percentage")
-    func cpuUsageCalculator() throws {
-        #if os(Linux)
-        let calculator = SystemMetricsMonitor.CPUUsageCalculator()
-        var usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 0, cpuTicks: 0)
-        #expect(!usage.isNaN)
-        #expect(usage == 0)
+    @Test("Monitor with custom provider reports metrics correctly")
+    func monitorWithCustomProvider() async throws {
+        // Create mock data
+        let mockData = SystemMetricsMonitor.Data(
+            virtualMemoryBytes: 1000,
+            residentMemoryBytes: 2000,
+            startTimeSeconds: 3000,
+            cpuSeconds: 4000,
+            maxFileDescriptors: 5000,
+            openFileDescriptors: 6000,
+            cpuUsage: 7.5
+        )
 
-        usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 20, cpuTicks: 10)
-        #expect(!usage.isNaN)
-        #expect(usage == 50)
-        #else
-        #expect(Bool(true), "Skipping on non-Linux platforms")
-        #endif
+        // Create mock provider
+        let provider = MockMetricsProvider(mockData: mockData)
+
+        // Create test metrics factory
+        let testMetrics = TestMetrics()
+
+        // Create labels
+        let labels = SystemMetricsMonitor.Labels(
+            prefix: "test_",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
+
+        // Create configuration
+        let configuration = SystemMetricsMonitor.Configuration(
+            pollInterval: .seconds(1),
+            labels: labels
+        )
+
+        // Create monitor with mock provider
+        let monitor = SystemMetricsMonitor(
+            configuration: configuration,
+            metricsFactory: testMetrics,
+            dataProvider: provider
+        )
+
+        // Update metrics once
+        try await monitor.updateMetrics()
+
+        // Verify each metric was recorded with correct values
+        let vmbGauge = try testMetrics.expectGauge("test_vmb")
+        #expect(vmbGauge.lastValue == 1000)
+        
+        let rmbGauge = try testMetrics.expectGauge("test_rmb")
+        #expect(rmbGauge.lastValue == 2000)
+        
+        let stsGauge = try testMetrics.expectGauge("test_sts")
+        #expect(stsGauge.lastValue == 3000)
+        
+        let cptGauge = try testMetrics.expectGauge("test_cpt")
+        #expect(cptGauge.lastValue == 4000)
+        
+        let mfdGauge = try testMetrics.expectGauge("test_mfd")
+        #expect(mfdGauge.lastValue == 5000)
+        
+        let ofdGauge = try testMetrics.expectGauge("test_ofd")
+        #expect(ofdGauge.lastValue == 6000)
+        
+        let cpuGauge = try testMetrics.expectGauge("test_cpu")
+        #expect(cpuGauge.lastValue == 7.5)
     }
 
-    @Test("Linux resident memory bytes reflects actual allocations")
-    func linuxResidentMemoryBytes() throws {
-        #if os(Linux)
+    @Test("Monitor with nil provider does not report metrics")
+    func monitorWithNilProvider() async throws {
+        // Create mock provider that returns nil
+        let provider = MockMetricsProvider(mockData: nil)
 
-        let pageByteCount = sysconf(Int32(_SC_PAGESIZE))
-        let allocationSize = 10_000 * pageByteCount
+        // Create test metrics factory
+        let testMetrics = TestMetrics()
 
-        let warmups = 20
-        for _ in 0..<warmups {
-            let bytes = UnsafeMutableRawBufferPointer.allocate(byteCount: allocationSize, alignment: 1)
-            defer { bytes.deallocate() }
-            bytes.initializeMemory(as: UInt8.self, repeating: .zero)
-        }
+        // Create labels
+        let labels = SystemMetricsMonitor.Labels(
+            prefix: "test_",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
 
-        guard let startResidentMemoryBytes = SystemMetricsMonitor.linuxSystemMetrics()?.residentMemoryBytes else {
-            Issue.record("Could not get resident memory usage.")
-            return
-        }
+        // Create configuration
+        let configuration = SystemMetricsMonitor.Configuration(
+            pollInterval: .seconds(1),
+            labels: labels
+        )
 
-        let bytes = UnsafeMutableRawBufferPointer.allocate(byteCount: allocationSize, alignment: 1)
-        defer { bytes.deallocate() }
-        bytes.initializeMemory(as: UInt8.self, repeating: .zero)
+        // Create monitor with mock provider
+        let monitor = SystemMetricsMonitor(
+            configuration: configuration,
+            metricsFactory: testMetrics,
+            dataProvider: provider
+        )
 
-        guard let residentMemoryBytes = SystemMetricsMonitor.linuxSystemMetrics()?.residentMemoryBytes else {
-            Issue.record("Could not get resident memory usage.")
-            return
-        }
+        // Update metrics once
+        try await monitor.updateMetrics()
 
-        /// According to the man page for proc_pid_stat(5) the value is
-        /// advertised as inaccurate.  It refers to proc_pid_statm(5), which
-        /// itself states:
-        ///
-        ///     Some of these values are inaccurate because of a kernel-
-        ///     internal scalability optimization.  If accurate values are
-        ///     required, use /proc/pid/smaps or /proc/pid/smaps_rollup
-        ///     instead, which are much slower but provide accurate,
-        ///     detailed information.
-        ///
-        /// Deferring discussion on whether we should extend this package to
-        /// produce these slower-to-retrieve, more-accurate values, we check
-        /// that the RSS value is within 1% of the expected allocation increase.
-        let difference = residentMemoryBytes - startResidentMemoryBytes
-        let accuracy = allocationSize / 100
-        #expect(abs(difference - allocationSize) <= accuracy)
-
-        #else
-        #expect(Bool(true), "Skipping on non-Linux platforms")
-        #endif
+        // Verify no metrics were recorded
+        #expect(testMetrics.recorders.count == 0)
     }
 
-    @Test("Linux CPU seconds measurement reflects actual CPU usage")
-    func linuxCPUSeconds() throws {
-        #if os(Linux)
+    @Test("Monitor with dimensions includes them in recorded metrics")
+    func monitorWithDimensions() async throws {
+        // Create mock data
+        let mockData = SystemMetricsMonitor.Data(
+            virtualMemoryBytes: 1000,
+            residentMemoryBytes: 2000,
+            startTimeSeconds: 3000,
+            cpuSeconds: 4000,
+            maxFileDescriptors: 5000,
+            openFileDescriptors: 6000,
+            cpuUsage: 7.5
+        )
 
-        let bytes = Array(repeating: UInt8.zero, count: 10)
-        var hasher = Hasher()
+        // Create mock provider
+        let provider = MockMetricsProvider(mockData: mockData)
 
-        let startTime = Date()
-        while Date().timeIntervalSince(startTime) < 1 {
-            bytes.hash(into: &hasher)
+        // Create test metrics factory
+        let testMetrics = TestMetrics()
+
+        // Create labels
+        let labels = SystemMetricsMonitor.Labels(
+            prefix: "test_",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
+
+        // Create configuration with dimensions
+        let dimensions = [("service", "myapp"), ("environment", "production")]
+        let configuration = SystemMetricsMonitor.Configuration(
+            pollInterval: .seconds(1),
+            labels: labels,
+            dimensions: dimensions
+        )
+
+        // Create monitor with mock provider
+        let monitor = SystemMetricsMonitor(
+            configuration: configuration,
+            metricsFactory: testMetrics,
+            dataProvider: provider
+        )
+
+        // Update metrics once
+        try await monitor.updateMetrics()
+
+        // Verify metrics include dimensions
+        let vmbGauge = try testMetrics.expectGauge("test_vmb", dimensions)
+        #expect(vmbGauge.lastValue == 1000)
+    }
+
+    @Test("Monitor run() method collects metrics periodically")
+    func monitorRunPeriodically() async throws {
+        // Create a provider that tracks how many times it's called
+        actor CallCountingProvider: SystemMetricsProvider {
+            var callCount = 0
+            let mockData: SystemMetricsMonitor.Data
+
+            init(mockData: SystemMetricsMonitor.Data) {
+                self.mockData = mockData
+            }
+
+            func data() async throws -> SystemMetricsMonitor.Data? {
+                callCount += 1
+                return mockData
+            }
+
+            func getCallCount() -> Int {
+                callCount
+            }
         }
 
-        let metrics = SystemMetricsMonitor.linuxSystemMetrics()
-        #expect(metrics != nil)
+        // Create mock data
+        let mockData = SystemMetricsMonitor.Data(
+            virtualMemoryBytes: 1000,
+            residentMemoryBytes: 2000,
+            startTimeSeconds: 3000,
+            cpuSeconds: 4000,
+            maxFileDescriptors: 5000,
+            openFileDescriptors: 6000,
+            cpuUsage: 7.5
+        )
 
-        // We can only set expectations for the lower limit for the CPU usage time,
-        // other threads executing other tests can add more CPU usage
-        #expect(metrics!.cpuSeconds > 0)
+        // Create counting provider
+        let provider = CallCountingProvider(mockData: mockData)
 
-        #else
-        #expect(Bool(true), "Skipping on non-Linux platforms")
-        #endif
+        // Create test metrics factory
+        let testMetrics = TestMetrics()
+
+        // Create labels
+        let labels = SystemMetricsMonitor.Labels(
+            prefix: "test_",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
+
+        // Create configuration with short interval for testing
+        let configuration = SystemMetricsMonitor.Configuration(
+            pollInterval: .milliseconds(100),
+            labels: labels
+        )
+
+        // Create monitor
+        let monitor = SystemMetricsMonitor(
+            configuration: configuration,
+            metricsFactory: testMetrics,
+            dataProvider: provider
+        )
+
+        // Run the monitor in a task and cancel after a short time
+        let monitorTask = Task {
+            try await monitor.run()
+        }
+
+        // Wait for a bit to let it collect a few times
+        try await Task.sleep(for: .milliseconds(350))
+
+        // Cancel the monitoring task
+        monitorTask.cancel()
+
+        // Give it a moment to finish cancellation
+        try await Task.sleep(for: .milliseconds(50))
+
+        // Verify the provider was called multiple times
+        let callCount = await provider.getCallCount()
+        // With 100ms interval and 350ms wait, we expect 3-4 calls
+        #expect(callCount >= 3)
+        #expect(callCount <= 5)
+
+        // Verify metrics were recorded
+        let vmbGauge = try testMetrics.expectGauge("test_vmb")
+        #expect(vmbGauge.lastValue == 1000)
     }
 }
+

@@ -15,6 +15,20 @@ import AsyncAlgorithms
 import Foundation
 import CoreMetrics
 
+/// A protocol for providing system metrics data.
+///
+/// Types conforming to this protocol can provide system metrics data
+/// to a `SystemMetricsMonitor`. This allows for flexible data collection
+/// strategies, including custom implementations for testing.
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+public protocol SystemMetricsProvider {
+    /// Retrieve current system metrics data.
+    ///
+    /// - Returns: Current system metrics, or `nil` if collection failed
+    ///            or is unsupported on the current platform.
+    func data() async throws -> SystemMetricsMonitor.Data?
+}
+
 /// A monitor that periodically collects and reports system metrics.
 ///
 /// `SystemMetricsMonitor` provides a way to automatically collect process-level system metrics
@@ -47,26 +61,49 @@ public struct SystemMetricsMonitor {
     /// Optional metrics factory for testing. If nil, uses `MetricsSystem.factory`.
     let metricsFactory: MetricsFactory?
 
-    /// Create a new `SystemMetricsMonitor` with a custom metrics factory.
+    /// The provider responsible for collecting system metrics data.
+    let dataProvider: SystemMetricsProvider
+
+    /// Create a new `SystemMetricsMonitor` with a custom metrics factory and data provider.
     ///
     /// This initializer is primarily useful for testing, allowing you to inject
-    /// a custom metrics factory instead of using the global `MetricsSystem.factory`.
+    /// both a custom metrics factory and a custom data provider.
     ///
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - metricsFactory: The metrics factory to use for creating metrics.
-    init(configuration: SystemMetricsMonitor.Configuration, metricsFactory: MetricsFactory) {
+    ///   - dataProvider: The provider to use for collecting system metrics data.
+    public init(
+        configuration: SystemMetricsMonitor.Configuration,
+        metricsFactory: MetricsFactory,
+        dataProvider: SystemMetricsProvider
+    ) {
         self.configuration = configuration
         self.metricsFactory = metricsFactory
+        self.dataProvider = dataProvider
+    }
+
+    /// Create a new `SystemMetricsMonitor` with a custom data provider.
+    ///
+    /// - Parameters:
+    ///   - configuration: The configuration for the monitor.
+    ///   - dataProvider: The provider to use for collecting system metrics data.
+    public init(configuration: SystemMetricsMonitor.Configuration, dataProvider: SystemMetricsProvider) {
+        self.configuration = configuration
+        self.metricsFactory = nil
+        self.dataProvider = dataProvider
     }
 
     /// Create a new `SystemMetricsMonitor` using the global metrics factory.
     ///
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
-    init(configuration: SystemMetricsMonitor.Configuration) {
+    public init(configuration: SystemMetricsMonitor.Configuration) {
         self.configuration = configuration
         self.metricsFactory = nil
+        // Create a temporary instance to use as the default provider
+        let temp = SystemMetricsMonitorDataProvider(configuration: configuration)
+        self.dataProvider = temp
     }
 
     /// Collect and report system metrics once.
@@ -76,7 +113,7 @@ public struct SystemMetricsMonitor {
     /// or is unsupported on the current platform, this method returns without
     /// reporting any metrics.
     package func updateMetrics() async throws {
-        guard let metrics = self.collectMetricsData() else { return }
+        guard let metrics = try await self.dataProvider.data() else { return }
         let effectiveMetricsFactory = self.metricsFactory ?? MetricsSystem.factory
         Gauge(label: self.configuration.labels.label(for: \.virtualMemoryBytes), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
             metrics.virtualMemoryBytes
@@ -106,10 +143,23 @@ public struct SystemMetricsMonitor {
     /// This method runs indefinitely, periodically collecting and reporting system metrics
     /// according to the poll interval specified in the configuration. It will only return
     /// if the async task is cancelled.
-    func run() async throws {
+    public func run() async throws {
         for await _ in AsyncTimerSequence(interval: self.configuration.interval, clock: .continuous) {
             try await self.updateMetrics()
         }
+    }
+}
+
+/// Default implementation of `SystemMetricsProvider` for collecting system metrics data.
+///
+/// This provider collects process-level metrics from the operating system.
+/// It is used as the default data provider when no custom provider is specified.
+@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
+package struct SystemMetricsMonitorDataProvider {
+    let configuration: SystemMetricsMonitor.Configuration
+
+    package init(configuration: SystemMetricsMonitor.Configuration) {
+        self.configuration = configuration
     }
 }
 
@@ -134,5 +184,33 @@ extension SystemMetricsMonitor {
         var openFileDescriptors: Int
         /// CPU usage percentage.
         var cpuUsage: Double
+        
+        /// Create a new `Data` instance.
+        ///
+        /// - parameters:
+        ///     - virtualMemoryBytes: Virtual memory size in bytes
+        ///     - residentMemoryBytes: Resident memory size in bytes.
+        ///     - startTimeSeconds: Total user and system CPU time spent in seconds.
+        ///     - cpuSeconds: Total user and system CPU time spent in seconds.
+        ///     - maxFileDescriptors: Maximum number of open file descriptors.
+        ///     - openFileDescriptors: Number of open file descriptors.
+        ///     - cpuUsage: Total CPU usage percentage.
+        public init(
+            virtualMemoryBytes: Int,
+            residentMemoryBytes: Int,
+            startTimeSeconds: Int,
+            cpuSeconds: Int,
+            maxFileDescriptors: Int,
+            openFileDescriptors: Int,
+            cpuUsage: Double
+        ) {
+            self.virtualMemoryBytes = virtualMemoryBytes
+            self.residentMemoryBytes = residentMemoryBytes
+            self.startTimeSeconds = startTimeSeconds
+            self.cpuSeconds = cpuSeconds
+            self.maxFileDescriptors = maxFileDescriptors
+            self.openFileDescriptors = openFileDescriptors
+            self.cpuUsage = cpuUsage
+        }
     }
 }
