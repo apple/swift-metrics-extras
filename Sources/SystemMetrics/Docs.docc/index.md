@@ -23,21 +23,21 @@ After adding `swift-metrics-extras` as a dependency you can import the `SystemMe
 import SystemMetrics
 ```
 
-This makes the System Metrics API available. This adds a new method to `MetricsSystem` called `bootstrapWithSystemMetrics`. Calling this method will call `MetricsSystem.bootstrap` as well as bootstrapping System Metrics.
+This makes the `SystemMetricsMonitor` object available. It can be constructed with a `SystemMetricsMonitor.Configuration` object to configure the system metrics. The config has the following properties:
 
-`bootstrapWithSystemMetrics` takes a `SystemMetrics.Configuration` object to configure the system metrics. The config has the following properties:
+- interval: The interval at which `SystemMetricsMonitor` collects system metrics and exports them via the `MetricsSubsystem`.
+- labels: `SystemMetricsMonitor.Labels` hold a string label for each of the above mentioned metrics that will be used for the metric labels, along with a prefix that will be used for all above mentioned metrics.
+- dimensions: Extra dimension labels attached to each metric.
 
-- interval: The interval at which `SystemMetrics` are being calculated & exported.
-- dataProvider: A closure returning `SystemMetrics.Data?`. When `nil`, no metrics are exported (the default on non-Linux platforms). `SystemMetrics.Data` holds all the values mentioned above.
-- labels: `SystemMetrics.Labels` hold a string label for each of the above mentioned metrics that will be used for the metric labels, along with a prefix that will be used for all above mentioned metrics.
+`SystemMetricsMonitor` can also be initialized with an optional `MetricsFactory`. If not provided a global factory from `MetricsSubsystem` will be used.
 
-Swift Metrics backend implementations are encouraged to provide static extensions to `SystemMetrics.Configuration` that fit the requirements of their specific backends. For example:
+Swift Metrics backend implementations are encouraged to provide static extensions to `SystemMetricsMonitor.Configuration` that fit the requirements of their specific backends. For example:
 ```swift
-public extension SystemMetrics.Configuration {
-    /// `SystemMetrics.Configuration` with Prometheus style labels.
+public extension SystemMetricsMonitor.Configuration {
+    /// `SystemMetricsMonitor.Configuration` with Prometheus style labels.
     ///
-    /// For more information see `SystemMetrics.Configuration`
-    static let prometheus = SystemMetrics.Configuration(
+    /// For more information see `SystemMetricsMonitor.Configuration`
+    static let prometheus = SystemMetricsMonitor.Configuration(
         labels: .init(
             prefix: "process_",
             virtualMemoryBytes: "virtual_memory_bytes",
@@ -51,10 +51,10 @@ public extension SystemMetrics.Configuration {
 }
 ```
 
-This allows end users to add System Metrics like this:
+This allows end users to setup System Metrics Monitor like this:
 
 ```swift
-MetricsSystem.bootstrapWithSystemMetrics(myPrometheusInstance, config: .prometheus)
+let systemMetricsMonitor = SystemMetricsMonitor(configuration: .prometheus, metricsFactory: myPrometheusMetricsFactory)
 ```
 
 ## Topics
