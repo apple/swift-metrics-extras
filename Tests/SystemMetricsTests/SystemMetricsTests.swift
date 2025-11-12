@@ -16,7 +16,7 @@ import CoreMetrics
 import Dispatch
 import Foundation
 import MetricsTestKit
-import SystemMetrics
+import SystemMetricsMonitor
 import Testing
 
 #if canImport(Glibc)

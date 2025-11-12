@@ -16,7 +16,7 @@
 import Foundation
 import Testing
 
-import SystemMetrics
+import SystemMetricsMonitor
 
 @Suite("Darwin Data Provider Tests")
 struct DarwinDataProviderTests {

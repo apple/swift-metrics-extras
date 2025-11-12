@@ -18,7 +18,7 @@ import PackageDescription
 let package = Package(
     name: "swift-metrics-extras",
     products: [
-        .library(name: "SystemMetrics", targets: ["SystemMetrics"])
+        .library(name: "SystemMetricsMonitor", targets: ["SystemMetricsMonitor"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2"),
@@ -26,16 +26,16 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SystemMetrics",
+            name: "SystemMetricsMonitor",
             dependencies: [
                 .product(name: "CoreMetrics", package: "swift-metrics"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
             ]
         ),
         .testTarget(
-            name: "SystemMetricsTests",
+            name: "SystemMetricsMonitorTests",
             dependencies: [
-                "SystemMetrics",
+                "SystemMetricsMonitor",
                 .product(name: "MetricsTestKit", package: "swift-metrics"),
             ]
         ),
