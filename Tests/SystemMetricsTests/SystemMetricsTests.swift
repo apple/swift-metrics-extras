@@ -203,7 +203,7 @@ struct SystemMetricsTests {
         try await monitor.updateMetrics()
 
         // Verify no metrics were recorded
-        #expect(testMetrics.recorders.count == 0)
+        #expect(testMetrics.recorders.isEmpty)
     }
 
     @Test("Monitor with dimensions includes them in recorded metrics")
@@ -346,6 +346,109 @@ struct SystemMetricsTests {
         // Verify metrics were recorded
         let vmbGauge = try testMetrics.expectGauge("test_vmb")
         #expect(vmbGauge.lastValue == 1000)
+    }
+}
+
+@Suite("SystemMetrics with MetricsSystem Initialization Tests", .serialized)
+struct SystemMetricsInitializationTests {
+    static let sharedSetup: TestMetrics = {
+        let testMetrics = TestMetrics()
+        MetricsSystem.bootstrap(testMetrics)
+        return testMetrics
+    }()
+
+    let testMetrics: TestMetrics = Self.sharedSetup
+    
+    @Test("Monitor uses global MetricsSystem when no factory provided")
+    func monitorUsesGlobalMetricsSystem() async throws {
+        // Create mock data
+        let mockData = SystemMetricsMonitor.Data(
+            virtualMemoryBytes: 1000,
+            residentMemoryBytes: 2000,
+            startTimeSeconds: 3000,
+            cpuSeconds: 4000,
+            maxFileDescriptors: 5000,
+            openFileDescriptors: 6000,
+            cpuUsage: 7.5
+        )
+
+        // Create mock provider
+        let provider = MockMetricsProvider(mockData: mockData)
+
+        // Create labels
+        let labels = SystemMetricsMonitor.Labels(
+            prefix: "global_",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
+
+        // Create configuration
+        let configuration = SystemMetricsMonitor.Configuration(
+            pollInterval: .seconds(1),
+            labels: labels
+        )
+
+        // Create monitor with custom provider but NO custom factory
+        // This should use the global MetricsSystem
+        let monitor = SystemMetricsMonitor(
+            configuration: configuration,
+            dataProvider: provider
+        )
+
+        // Update metrics once
+        try await monitor.updateMetrics()
+
+        // Verify metrics were recorded in the global metrics system
+        let vmbGauge = try testMetrics.expectGauge("global_vmb")
+        #expect(vmbGauge.lastValue == 1000)
+
+        let rmbGauge = try testMetrics.expectGauge("global_rmb")
+        #expect(rmbGauge.lastValue == 2000)
+    }
+
+    @Test("Monitor with default provider uses platform implementation")
+    func monitorWithDefaultProvider() async throws {
+        // Create labels
+        let labels = SystemMetricsMonitor.Labels(
+            prefix: "default_",
+            virtualMemoryBytes: "vmb",
+            residentMemoryBytes: "rmb",
+            startTimeSeconds: "sts",
+            cpuSecondsTotal: "cpt",
+            maxFds: "mfd",
+            openFds: "ofd",
+            cpuUsage: "cpu"
+        )
+
+        // Create configuration
+        let configuration = SystemMetricsMonitor.Configuration(
+            pollInterval: .seconds(1),
+            labels: labels
+        )
+
+        // Create monitor with default provider (no custom provider passed)
+        // This should use SystemMetricsMonitorDataProvider internally
+        let monitor = SystemMetricsMonitor(configuration: configuration)
+
+        // Update metrics once
+        try await monitor.updateMetrics()
+
+        #if os(Linux)
+        // On Linux, we should get actual metrics
+        let vmbGauge = try testMetrics.expectGauge("default_vmb")
+        #expect(vmbGauge.lastValue != nil)
+        #expect(vmbGauge.lastValue! > 0)
+        #else
+        // On macOS, the provider returns nil, so no metrics should be recorded
+        #expect(!testMetrics.recorders.contains(where: { recorder in
+            recorder.label == "default_vmb"
+        }))
+        #endif
     }
 }
 
