@@ -125,7 +125,7 @@ struct LinuxDataProviderTests {
         )
 
         let provider = SystemMetricsMonitorDataProvider(configuration: configuration)
-        let data = try await provider.data()
+        let data = await provider.data()
 
         #expect(data != nil)
         let metrics = data!

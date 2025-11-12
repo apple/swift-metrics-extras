@@ -26,7 +26,7 @@ public protocol SystemMetricsProvider {
     ///
     /// - Returns: Current system metrics, or `nil` if collection failed
     ///            or is unsupported on the current platform.
-    func data() async throws -> SystemMetricsMonitor.Data?
+    func data() async -> SystemMetricsMonitor.Data?
 }
 
 /// A monitor that periodically collects and reports system metrics.
@@ -113,7 +113,7 @@ public struct SystemMetricsMonitor {
     /// or is unsupported on the current platform, this method returns without
     /// reporting any metrics.
     package func updateMetrics() async throws {
-        guard let metrics = try await self.dataProvider.data() else { return }
+        guard let metrics = await self.dataProvider.data() else { return }
         let effectiveMetricsFactory = self.metricsFactory ?? MetricsSystem.factory
         Gauge(label: self.configuration.labels.label(for: \.virtualMemoryBytes), dimensions: self.configuration.dimensions, factory: effectiveMetricsFactory).record(
             metrics.virtualMemoryBytes

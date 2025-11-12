@@ -38,7 +38,7 @@ struct DarwinDataProviderTests {
         )
 
         let provider = SystemMetricsMonitorDataProvider(configuration: configuration)
-        let data = try await provider.data()
+        let data = await provider.data()
 
         // Currently returns nil because macOS implementation is not yet available
         #expect(data == nil)

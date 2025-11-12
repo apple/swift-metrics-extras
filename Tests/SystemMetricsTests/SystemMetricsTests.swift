@@ -31,7 +31,7 @@ import Musl
 struct MockMetricsProvider: SystemMetricsProvider {
     let mockData: SystemMetricsMonitor.Data?
 
-    func data() async throws -> SystemMetricsMonitor.Data? {
+    func data() async -> SystemMetricsMonitor.Data? {
         mockData
     }
 }
@@ -271,7 +271,7 @@ struct SystemMetricsTests {
                 self.mockData = mockData
             }
 
-            func data() async throws -> SystemMetricsMonitor.Data? {
+            func data() async -> SystemMetricsMonitor.Data? {
                 callCount += 1
                 return mockData
             }
@@ -333,9 +333,6 @@ struct SystemMetricsTests {
 
         // Cancel the monitoring task
         monitorTask.cancel()
-
-        // Give it a moment to finish cancellation
-        try await Task.sleep(for: .milliseconds(50))
 
         // Verify the provider was called multiple times
         let callCount = await provider.getCallCount()

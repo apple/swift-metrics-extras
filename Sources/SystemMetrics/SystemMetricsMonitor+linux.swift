@@ -148,7 +148,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     /// On Linux, this delegates to the static `linuxSystemMetrics()` function.
     ///
     /// - Returns: Current system metrics, or `nil` if collection failed.
-    func data() async throws -> SystemMetricsMonitor.Data? {
+    func data() async -> SystemMetricsMonitor.Data? {
         Self.linuxSystemMetrics()
     }
 
