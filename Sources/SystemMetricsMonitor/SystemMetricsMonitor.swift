@@ -21,7 +21,7 @@ import Foundation
 /// to a `SystemMetricsMonitor`. This allows for flexible data collection
 /// strategies, including custom implementations for testing.
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-public protocol SystemMetricsProvider {
+public protocol SystemMetricsProvider: Sendable {
     /// Retrieve current system metrics data.
     ///
     /// - Returns: Current system metrics, or `nil` if collection failed
@@ -42,9 +42,9 @@ public protocol SystemMetricsProvider {
 ///     residentMemoryBytes: "resident_memory_bytes",
 ///     startTimeSeconds: "start_time_seconds",
 ///     cpuSecondsTotal: "cpu_seconds_total",
+///     cpuUsage: "cpu_usage"
 ///     maxFds: "max_fds",
 ///     openFds: "open_fds",
-///     cpuUsage: "cpu_usage"
 /// )
 /// let configuration = SystemMetricsMonitor.Configuration(
 ///     pollInterval: .seconds(2),
@@ -54,7 +54,7 @@ public protocol SystemMetricsProvider {
 /// try await monitor.run()
 /// ```
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-public struct SystemMetricsMonitor {
+public struct SystemMetricsMonitor: Sendable {
     /// Configuration for the system metrics monitor.
     let configuration: SystemMetricsMonitor.Configuration
 
@@ -192,7 +192,7 @@ public struct SystemMetricsMonitor {
 /// This provider collects process-level metrics from the operating system.
 /// It is used as the default data provider when no custom provider is specified.
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-package struct SystemMetricsMonitorDataProvider {
+package struct SystemMetricsMonitorDataProvider: Sendable {
     let configuration: SystemMetricsMonitor.Configuration
 
     package init(configuration: SystemMetricsMonitor.Configuration) {
@@ -215,12 +215,12 @@ extension SystemMetricsMonitor {
         var startTimeSeconds: Int
         /// Total user and system CPU time spent in seconds.
         var cpuSeconds: Int
+        /// CPU usage percentage.
+        var cpuUsage: Double
         /// Maximum number of open file descriptors.
         var maxFileDescriptors: Int
         /// Number of open file descriptors.
         var openFileDescriptors: Int
-        /// CPU usage percentage.
-        var cpuUsage: Double
 
         /// Create a new `Data` instance.
         ///
@@ -229,25 +229,25 @@ extension SystemMetricsMonitor {
         ///     - residentMemoryBytes: Resident memory size in bytes.
         ///     - startTimeSeconds: Total user and system CPU time spent in seconds.
         ///     - cpuSeconds: Total user and system CPU time spent in seconds.
+        ///     - cpuUsage: Total CPU usage percentage.
         ///     - maxFileDescriptors: Maximum number of open file descriptors.
         ///     - openFileDescriptors: Number of open file descriptors.
-        ///     - cpuUsage: Total CPU usage percentage.
         public init(
             virtualMemoryBytes: Int,
             residentMemoryBytes: Int,
             startTimeSeconds: Int,
             cpuSeconds: Int,
+            cpuUsage: Double,
             maxFileDescriptors: Int,
-            openFileDescriptors: Int,
-            cpuUsage: Double
+            openFileDescriptors: Int
         ) {
             self.virtualMemoryBytes = virtualMemoryBytes
             self.residentMemoryBytes = residentMemoryBytes
             self.startTimeSeconds = startTimeSeconds
             self.cpuSeconds = cpuSeconds
+            self.cpuUsage = cpuUsage
             self.maxFileDescriptors = maxFileDescriptors
             self.openFileDescriptors = openFileDescriptors
-            self.cpuUsage = cpuUsage
         }
     }
 }

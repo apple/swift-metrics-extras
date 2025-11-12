@@ -117,9 +117,9 @@ struct LinuxDataProviderTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
         let configuration = SystemMetricsMonitor.Configuration(
             pollInterval: .seconds(1),

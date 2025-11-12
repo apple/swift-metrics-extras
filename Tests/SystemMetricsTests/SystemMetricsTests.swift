@@ -44,18 +44,18 @@ struct SystemMetricsTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
 
         #expect(labels.label(for: \.virtualMemoryBytes) == "pfx+vmb")
         #expect(labels.label(for: \.residentMemoryBytes) == "pfx+rmb")
         #expect(labels.label(for: \.startTimeSeconds) == "pfx+sts")
         #expect(labels.label(for: \.cpuSecondsTotal) == "pfx+cpt")
+        #expect(labels.label(for: \.cpuUsage) == "pfx+cpu")
         #expect(labels.label(for: \.maxFileDescriptors) == "pfx+mfd")
         #expect(labels.label(for: \.openFileDescriptors) == "pfx+ofd")
-        #expect(labels.label(for: \.cpuUsage) == "pfx+cpu")
     }
 
     @Test("Configuration preserves all provided settings")
@@ -66,9 +66,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
         let dimensions = [("app", "example"), ("environment", "production")]
         let configuration = SystemMetricsMonitor.Configuration(
@@ -83,9 +83,9 @@ struct SystemMetricsTests {
         #expect(configuration.labels.label(for: \.residentMemoryBytes) == "pfx_rmb")
         #expect(configuration.labels.label(for: \.startTimeSeconds) == "pfx_sts")
         #expect(configuration.labels.label(for: \.cpuSecondsTotal) == "pfx_cpt")
+        #expect(configuration.labels.label(for: \.cpuUsage) == "pfx_cpu")
         #expect(configuration.labels.label(for: \.maxFileDescriptors) == "pfx_mfd")
         #expect(configuration.labels.label(for: \.openFileDescriptors) == "pfx_ofd")
-        #expect(configuration.labels.label(for: \.cpuUsage) == "pfx_cpu")
 
         #expect(configuration.dimensions.contains(where: { $0 == ("app", "example") }))
         #expect(configuration.dimensions.contains(where: { $0 == ("environment", "production") }))
@@ -101,9 +101,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: 2000,
             startTimeSeconds: 3000,
             cpuSeconds: 4000,
+            cpuUsage: 7.5,
             maxFileDescriptors: 5000,
-            openFileDescriptors: 6000,
-            cpuUsage: 7.5
+            openFileDescriptors: 6000
         )
 
         let provider = MockMetricsProvider(mockData: mockData)
@@ -115,9 +115,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
 
         let configuration = SystemMetricsMonitor.Configuration(
@@ -145,14 +145,14 @@ struct SystemMetricsTests {
         let cptGauge = try testMetrics.expectGauge("test_cpt")
         #expect(cptGauge.lastValue == 4000)
 
+        let cpuGauge = try testMetrics.expectGauge("test_cpu")
+        #expect(cpuGauge.lastValue == 7.5)
+
         let mfdGauge = try testMetrics.expectGauge("test_mfd")
         #expect(mfdGauge.lastValue == 5000)
 
         let ofdGauge = try testMetrics.expectGauge("test_ofd")
         #expect(ofdGauge.lastValue == 6000)
-
-        let cpuGauge = try testMetrics.expectGauge("test_cpu")
-        #expect(cpuGauge.lastValue == 7.5)
     }
 
     @Test("Monitor with nil provider does not report metrics")
@@ -166,9 +166,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
 
         let configuration = SystemMetricsMonitor.Configuration(
@@ -194,9 +194,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: 2000,
             startTimeSeconds: 3000,
             cpuSeconds: 4000,
+            cpuUsage: 7.5,
             maxFileDescriptors: 5000,
-            openFileDescriptors: 6000,
-            cpuUsage: 7.5
+            openFileDescriptors: 6000
         )
 
         let provider = MockMetricsProvider(mockData: mockData)
@@ -208,9 +208,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
 
         let dimensions = [("service", "myapp"), ("environment", "production")]
@@ -257,9 +257,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: 2000,
             startTimeSeconds: 3000,
             cpuSeconds: 4000,
+            cpuUsage: 7.5,
             maxFileDescriptors: 5000,
-            openFileDescriptors: 6000,
-            cpuUsage: 7.5
+            openFileDescriptors: 6000
         )
 
         let provider = CallCountingProvider(mockData: mockData)
@@ -271,9 +271,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
 
         let configuration = SystemMetricsMonitor.Configuration(
@@ -314,9 +314,9 @@ struct SystemMetricsTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
 
         let configuration = SystemMetricsMonitor.Configuration(
@@ -361,9 +361,9 @@ struct SystemMetricsInitializationTests {
             residentMemoryBytes: 2000,
             startTimeSeconds: 3000,
             cpuSeconds: 4000,
+            cpuUsage: 7.5,
             maxFileDescriptors: 5000,
-            openFileDescriptors: 6000,
-            cpuUsage: 7.5
+            openFileDescriptors: 6000
         )
 
         let provider = MockMetricsProvider(mockData: mockData)
@@ -374,9 +374,9 @@ struct SystemMetricsInitializationTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
 
         let configuration = SystemMetricsMonitor.Configuration(
@@ -407,9 +407,9 @@ struct SystemMetricsInitializationTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
+            cpuUsage: "cpu",
             maxFds: "mfd",
-            openFds: "ofd",
-            cpuUsage: "cpu"
+            openFds: "ofd"
         )
 
         let configuration = SystemMetricsMonitor.Configuration(

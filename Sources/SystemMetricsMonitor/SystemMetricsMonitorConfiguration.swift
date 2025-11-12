@@ -29,12 +29,12 @@ extension SystemMetricsMonitor {
         package let startTimeSeconds: String
         /// Total user and system CPU time spent in seconds.
         package let cpuSecondsTotal: String
+        /// CPU usage percentage.
+        package let cpuUsage: String
         /// Maximum number of open file descriptors.
         package let maxFileDescriptors: String
         /// Number of open file descriptors.
         package let openFileDescriptors: String
-        /// CPU usage percentage.
-        package let cpuUsage: String
 
         /// Create a new `Labels` instance.
         ///
@@ -44,27 +44,27 @@ extension SystemMetricsMonitor {
         ///     - residentMemoryBytes: Resident memory size in bytes.
         ///     - startTimeSeconds: Total user and system CPU time spent in seconds.
         ///     - cpuSecondsTotal: Total user and system CPU time spent in seconds.
+        ///     - cpuUsage: Total CPU usage percentage.
         ///     - maxFds: Maximum number of open file descriptors.
         ///     - openFds: Number of open file descriptors.
-        ///     - cpuUsage: Total CPU usage percentage.
         public init(
             prefix: String,
             virtualMemoryBytes: String,
             residentMemoryBytes: String,
             startTimeSeconds: String,
             cpuSecondsTotal: String,
+            cpuUsage: String,
             maxFds: String,
-            openFds: String,
-            cpuUsage: String
+            openFds: String
         ) {
             self.prefix = prefix
             self.virtualMemoryBytes = virtualMemoryBytes
             self.residentMemoryBytes = residentMemoryBytes
             self.startTimeSeconds = startTimeSeconds
             self.cpuSecondsTotal = cpuSecondsTotal
+            self.cpuUsage = cpuUsage
             self.maxFileDescriptors = maxFds
             self.openFileDescriptors = openFds
-            self.cpuUsage = cpuUsage
         }
 
         package func label(for keyPath: KeyPath<Labels, String>) -> String {
