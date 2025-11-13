@@ -1,10 +1,10 @@
-# SCO-NNNN: Feature name
+# SSM-NNNN: Feature name
 
 Feature abstract – a one sentence summary.
 
 ## Overview
 
-- Proposal: SCO-NNNN
+- Proposal: SSM-NNNN
 - Author(s): [Author 1](https://github.com/swiftdev), [Author 2](https://github.com/swiftdev)
 - Status: **Awaiting Review**
 - Issue: [apple/swift-metrics-extras#1](https://github.com/apple/swift-metrics-extras/issues/1)
