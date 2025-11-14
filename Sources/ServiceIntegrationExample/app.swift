@@ -46,9 +46,10 @@ struct Application {
         
         let service = FooService()
         let systemMetricsMonitor = SystemMetricsMonitor(configuration: .prometheus)
+        let anotherSystemMetricsMonitor = SystemMetricsMonitor(configuration: .prometheus, metricsFactory: testMetrics)
 
         let serviceGroup = ServiceGroup(
-            services: [service, systemMetricsMonitor],
+            services: [service, systemMetricsMonitor, anotherSystemMetricsMonitor],
             gracefulShutdownSignals: [.sigterm],
             logger: logger
         )

@@ -84,7 +84,7 @@ public struct SystemMetricsMonitor: Sendable {
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - metricsFactory: The metrics factory to use for creating metrics.
-    package init(configuration: SystemMetricsMonitor.Configuration, metricsFactory: MetricsFactory) {
+    public init(configuration: SystemMetricsMonitor.Configuration, metricsFactory: MetricsFactory) {
         self.configuration = configuration
         self.metricsFactory = metricsFactory
         self.dataProvider = SystemMetricsMonitorDataProvider(configuration: configuration)
