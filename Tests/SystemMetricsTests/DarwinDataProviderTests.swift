@@ -22,15 +22,15 @@ import SystemMetricsMonitor
 struct DarwinDataProviderTests {
     @Test("Data provider returns nil on macOS (not yet implemented)")
     func dataProviderReturnsNil() async throws {
-        let labels = SystemMetricsMonitor.Labels(
+        let labels = SystemMetricsMonitor.Configuration.Labels(
             prefix: "test_",
             virtualMemoryBytes: "vmb",
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
             cpuUsage: "cpu",
-            maxFds: "mfd",
-            openFds: "ofd"
+            maxFileDescriptors: "mfd",
+            openFileDescriptors: "ofd"
         )
         let configuration = SystemMetricsMonitor.Configuration(
             pollInterval: .seconds(1),

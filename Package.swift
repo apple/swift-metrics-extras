@@ -29,13 +29,13 @@ let package = Package(
             name: "SystemMetricsMonitor",
             dependencies: [
                 .product(name: "CoreMetrics", package: "swift-metrics"),
+                .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
             ]
         ),
         .executableTarget(
             name: "ServiceIntegrationExample",
             dependencies: [
                 "SystemMetricsMonitor",
-                .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
                 .product(name: "Metrics", package: "swift-metrics"),
                 .product(name: "MetricsTestKit", package: "swift-metrics"),
             ]

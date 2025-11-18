@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 import CoreMetrics
 import Foundation
+import ServiceLifecycle
 
 /// A monitor that periodically collects and reports system metrics.
 ///
@@ -21,16 +22,7 @@ import Foundation
 ///
 /// Example usage:
 /// ```swift
-/// let labels = SystemMetricsMonitor.Labels(
-///     prefix: "process_",
-///     virtualMemoryBytes: "virtual_memory_bytes",
-///     residentMemoryBytes: "resident_memory_bytes",
-///     startTimeSeconds: "start_time_seconds",
-///     cpuSecondsTotal: "cpu_seconds_total",
-///     cpuUsage: "cpu_usage"
-///     maxFds: "max_fds",
-///     openFds: "open_fds",
-/// )
+/// let labels = SystemMetricsMonitor.Configuration.Labels()
 /// let configuration = SystemMetricsMonitor.Configuration(
 ///     pollInterval: .seconds(2),
 ///     labels: labels
@@ -39,7 +31,7 @@ import Foundation
 /// try await monitor.run()
 /// ```
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-public struct SystemMetricsMonitor: Sendable {
+public struct SystemMetricsMonitor: Service {
     /// Configuration for the system metrics monitor.
     let configuration: SystemMetricsMonitor.Configuration
 

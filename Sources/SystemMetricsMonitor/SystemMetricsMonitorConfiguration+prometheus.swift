@@ -11,7 +11,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
-
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension SystemMetricsMonitor.Configuration {
     /// Prometheus-style metric configuration
@@ -24,8 +23,8 @@ extension SystemMetricsMonitor.Configuration {
             startTimeSeconds: "start_time_seconds",
             cpuSecondsTotal: "cpu_seconds_total",
             cpuUsage: "cpu_usage",
-            maxFds: "max_fds",
-            openFds: "open_fds"
+            maxFileDescriptors: "max_fds",
+            openFileDescriptors: "open_fds"
         )
     )
 }

@@ -33,7 +33,7 @@ import SystemMetricsMonitor
 Create and start a monitor with default settings:
 
 ```swift
-let labels = SystemMetricsMonitor.Labels(
+let labels = SystemMetricsMonitor.Configuration.Labels(
     prefix: "process_",
     virtualMemoryBytes: "virtual_memory_bytes",
     residentMemoryBytes: "resident_memory_bytes",
@@ -64,7 +64,7 @@ The monitor will collect and report metrics every 2 seconds using the global `Me
 Customize metric labels to namespace the metrics:
 
 ```swift
-let labels = SystemMetricsMonitor.Labels(
+let labels = SystemMetricsMonitor.Configuration.Labels(
     prefix: "app_",
     virtualMemoryBytes: "virt_mem",
     residentMemoryBytes: "res_mem",

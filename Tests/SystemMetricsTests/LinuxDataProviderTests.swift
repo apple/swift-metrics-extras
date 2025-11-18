@@ -111,7 +111,7 @@ struct LinuxDataProviderTests {
 
     @Test("Data provider returns valid metrics via protocol")
     func dataProviderProtocol() async throws {
-        let labels = SystemMetricsMonitor.Labels(
+        let labels = SystemMetricsMonitor.Configuration.Labels(
             prefix: "test_",
             virtualMemoryBytes: "vmb",
             residentMemoryBytes: "rmb",
