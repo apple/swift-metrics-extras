@@ -32,7 +32,7 @@ extension SystemMetricsMonitor {
             self.labels = .init()
             self.dimensions = dimensions
         }
-        
+
         /// Create new instance of `SystemMetricsOptions`
         ///
         /// - Parameters:
@@ -82,12 +82,12 @@ extension SystemMetricsMonitor.Configuration {
         package func label(for keyPath: KeyPath<Labels, String>) -> String {
             self.prefix + self[keyPath: keyPath]
         }
-        
+
         /// Create a new `Labels` instance with default values.
         ///
         package init() {
         }
-        
+
         /// Create a new `Labels` instance.
         ///
         /// - Parameters:

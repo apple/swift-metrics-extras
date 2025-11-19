@@ -13,6 +13,7 @@
 //===----------------------------------------------------------------------===//
 import CoreMetrics
 import Foundation
+import Logging
 import ServiceLifecycle
 
 /// A monitor that periodically collects and reports system metrics.
@@ -39,23 +40,26 @@ public struct SystemMetricsMonitor: Service {
     /// The provider responsible for collecting system metrics data.
     let dataProvider: SystemMetricsProvider
 
-    /// Create a new `SystemMetricsMonitor` with a custom metrics factory and data provider.
-    ///
-    /// This initializer is primarily useful for testing, allowing you to inject
-    /// both a custom metrics factory and a custom data provider.
+    /// Internal logger
+    let logger: Logger
+
+    /// Create a new `SystemMetricsMonitor` using the global metrics factory.
     ///
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - metricsFactory: The metrics factory to use for creating metrics.
     ///   - dataProvider: The provider to use for collecting system metrics data.
+    ///   - logger: A custom logger.
     package init(
         configuration: SystemMetricsMonitor.Configuration,
-        metricsFactory: MetricsFactory,
-        dataProvider: SystemMetricsProvider
+        metricsFactory: MetricsFactory?,
+        dataProvider: SystemMetricsProvider,
+        logger: Logger? = nil
     ) {
         self.configuration = configuration
         self.metricsFactory = metricsFactory
         self.dataProvider = dataProvider
+        self.logger = logger ?? Logger(label: "SystemMetricsMonitor")
     }
 
     /// Create a new `SystemMetricsMonitor` with a custom data provider.
@@ -63,10 +67,17 @@ public struct SystemMetricsMonitor: Service {
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - dataProvider: The provider to use for collecting system metrics data.
-    package init(configuration: SystemMetricsMonitor.Configuration, dataProvider: SystemMetricsProvider) {
-        self.configuration = configuration
-        self.metricsFactory = nil
-        self.dataProvider = dataProvider
+    package init(
+        configuration: SystemMetricsMonitor.Configuration,
+        dataProvider: SystemMetricsProvider,
+        logger: Logger? = nil
+    ) {
+        self.init(
+            configuration: configuration,
+            metricsFactory: nil,
+            dataProvider: dataProvider,
+            logger: logger
+        )
     }
 
     /// Create a new `SystemMetricsMonitor` with a custom metrics factory.
@@ -74,20 +85,30 @@ public struct SystemMetricsMonitor: Service {
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - metricsFactory: The metrics factory to use for creating metrics.
-    public init(configuration: SystemMetricsMonitor.Configuration, metricsFactory: MetricsFactory) {
-        self.configuration = configuration
-        self.metricsFactory = metricsFactory
-        self.dataProvider = SystemMetricsMonitorDataProvider(configuration: configuration)
+    public init(
+        configuration: SystemMetricsMonitor.Configuration,
+        metricsFactory: MetricsFactory,
+        logger: Logger? = nil
+    ) {
+        self.init(
+            configuration: configuration,
+            metricsFactory: metricsFactory,
+            dataProvider: SystemMetricsMonitorDataProvider(configuration: configuration),
+            logger: logger
+        )
     }
 
     /// Create a new `SystemMetricsMonitor` using the global metrics factory.
     ///
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
-    public init(configuration: SystemMetricsMonitor.Configuration) {
-        self.configuration = configuration
-        self.metricsFactory = nil
-        self.dataProvider = SystemMetricsMonitorDataProvider(configuration: configuration)
+    public init(configuration: SystemMetricsMonitor.Configuration, logger: Logger? = nil) {
+        self.init(
+            configuration: configuration,
+            metricsFactory: nil,
+            dataProvider: SystemMetricsMonitorDataProvider(configuration: configuration),
+            logger: logger
+        )
     }
 
     /// Collect and report system metrics once.
@@ -97,7 +118,17 @@ public struct SystemMetricsMonitor: Service {
     /// or is unsupported on the current platform, this method returns without
     /// reporting any metrics.
     package func updateMetrics() async throws {
-        guard let metrics = await self.dataProvider.data() else { return }
+        guard let metrics = await self.dataProvider.data() else {
+            self.logger.warning("Failed to fetch the latest system metrics")
+            return
+        }
+        self.logger.info(
+            "Fetched the latest system metrics",
+            metadata: [
+                self.configuration.labels.cpuSecondsTotal.description: Logger.MetadataValue("\(metrics.cpuUsage)"),
+                self.configuration.labels.cpuUsage.description: Logger.MetadataValue("\(metrics.cpuUsage)"),
+            ]
+        )
         let effectiveMetricsFactory = self.metricsFactory ?? MetricsSystem.factory
         Gauge(
             label: self.configuration.labels.label(for: \.virtualMemoryBytes),
