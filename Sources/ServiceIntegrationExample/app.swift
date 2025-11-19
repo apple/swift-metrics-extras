@@ -16,13 +16,8 @@ import Logging
 import Metrics
 import MetricsTestKit
 import ServiceLifecycle
-import SystemMetricsMonitor
+import SystemMetrics
 import UnixSignals
-
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
-extension SystemMetricsMonitor: Service {
-    // SystemMetricsMonitor already conforms to the Service protocol
-}
 
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 struct FooService: Service {
@@ -44,11 +39,10 @@ struct Application {
         MetricsSystem.bootstrap(testMetrics)
 
         let service = FooService()
-        let systemMetricsMonitor = SystemMetricsMonitor(configuration: .prometheus)
-        let anotherSystemMetricsMonitor = SystemMetricsMonitor(configuration: .prometheus, metricsFactory: testMetrics)
+        let systemMetricsMonitor = SystemMetricsMonitor(configuration: .init(pollInterval: .seconds(2)))
 
         let serviceGroup = ServiceGroup(
-            services: [service, systemMetricsMonitor, anotherSystemMetricsMonitor],
+            services: [service, systemMetricsMonitor],
             gracefulShutdownSignals: [.sigterm],
             logger: logger
         )

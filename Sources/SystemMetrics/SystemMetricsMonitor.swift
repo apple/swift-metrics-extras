@@ -22,10 +22,8 @@ import ServiceLifecycle
 ///
 /// Example usage:
 /// ```swift
-/// let labels = SystemMetricsMonitor.Configuration.Labels()
 /// let configuration = SystemMetricsMonitor.Configuration(
-///     pollInterval: .seconds(2),
-///     labels: labels
+///     pollInterval: .seconds(2)
 /// )
 /// let monitor = SystemMetricsMonitor(configuration: configuration)
 /// try await monitor.run()

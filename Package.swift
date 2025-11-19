@@ -18,7 +18,7 @@ import PackageDescription
 let package = Package(
     name: "swift-metrics-extras",
     products: [
-        .library(name: "SystemMetricsMonitor", targets: ["SystemMetricsMonitor"])
+        .library(name: "SystemMetrics", targets: ["SystemMetrics"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2"),
@@ -26,7 +26,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "SystemMetricsMonitor",
+            name: "SystemMetrics",
             dependencies: [
                 .product(name: "CoreMetrics", package: "swift-metrics"),
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
@@ -35,15 +35,15 @@ let package = Package(
         .executableTarget(
             name: "ServiceIntegrationExample",
             dependencies: [
-                "SystemMetricsMonitor",
+                "SystemMetrics",
                 .product(name: "Metrics", package: "swift-metrics"),
                 .product(name: "MetricsTestKit", package: "swift-metrics"),
             ]
         ),
         .testTarget(
-            name: "SystemMetricsMonitorTests",
+            name: "SystemMetricsTests",
             dependencies: [
-                "SystemMetricsMonitor",
+                "SystemMetrics",
                 .product(name: "MetricsTestKit", package: "swift-metrics"),
             ]
         ),
