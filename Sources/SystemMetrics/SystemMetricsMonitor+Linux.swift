@@ -102,7 +102,9 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         /// The number of ticks the process actively used the CPU for, as of the previous CPU usage measurement.
         private var locked_previousCPUTicks: Int = 0
 
-        func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
+        public init() {}
+
+        public func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
             MetricsSystem.withWriterLock {
                 defer {
                     self.locked_previousTicksSinceSystemBoot = ticksSinceSystemBoot
@@ -148,7 +150,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     /// On Linux, this delegates to the static `linuxSystemMetrics()` function.
     ///
     /// - Returns: Current system metrics, or `nil` if collection failed.
-    func data() async -> SystemMetricsMonitor.Data? {
+    package func data() async -> SystemMetricsMonitor.Data? {
         Self.linuxSystemMetrics()
     }
 
@@ -266,11 +268,11 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             .split(separator: " ")
             .map(String.init)
         guard
-            let virtualMemoryBytes = Int(stats[safe: StatIndices.virtualMemoryBytes]),
-            let rss = Int(stats[safe: StatIndices.residentMemoryBytes]),
-            let startTimeTicks = Int(stats[safe: StatIndices.startTimeTicks]),
-            let utimeTicks = Int(stats[safe: StatIndices.utimeTicks]),
-            let stimeTicks = Int(stats[safe: StatIndices.stimeTicks])
+            let virtualMemoryBytes = Int(stats[StatIndices.virtualMemoryBytes]),
+            let rss = Int(stats[StatIndices.residentMemoryBytes]),
+            let startTimeTicks = Int(stats[StatIndices.startTimeTicks]),
+            let utimeTicks = Int(stats[StatIndices.utimeTicks]),
+            let stimeTicks = Int(stats[StatIndices.stimeTicks])
         else { return nil }
 
         let residentMemoryBytes = rss * SystemConfiguration.pageByteCount
@@ -278,7 +280,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         let cpuTicks = utimeTicks + stimeTicks
         let cpuSeconds = cpuTicks / SystemConfiguration.clockTicksPerSecond
 
-        guard let systemStartTimeInSecondsSinceEpoch = SystemMetricsMonitor.systemStartTimeInSecondsSinceEpoch else {
+        guard let systemStartTimeInSecondsSinceEpoch = Self.systemStartTimeInSecondsSinceEpoch else {
             return nil
         }
         let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
@@ -290,7 +292,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
                 uptimeSeconds.isFinite
             else { return nil }
             let uptimeTicks = Int(ceilf(uptimeSeconds)) * SystemConfiguration.clockTicksPerSecond
-            cpuUsage = SystemMetricsMonitor.cpuUsageCalculator.getUsagePercentage(
+            cpuUsage = Self.cpuUsageCalculator.getUsagePercentage(
                 ticksSinceSystemBoot: uptimeTicks,
                 cpuTicks: cpuTicks
             )
@@ -324,9 +326,9 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             residentMemoryBytes: residentMemoryBytes,
             startTimeSeconds: startTimeInSecondsSinceEpoch,
             cpuSeconds: cpuSeconds,
+            cpuUsage: cpuUsage,
             maxFileDescriptors: maxFileDescriptors,
-            openFileDescriptors: openFileDescriptors,
-            cpuUsage: cpuUsage
+            openFileDescriptors: openFileDescriptors
         )
     }
 }

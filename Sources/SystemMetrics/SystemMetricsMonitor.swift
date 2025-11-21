@@ -233,19 +233,19 @@ extension SystemMetricsMonitor {
     /// https://prometheus.io/docs/instrumenting/writing_clientlibs/#standard-and-runtime-collectors
     public struct Data: Sendable {
         /// Virtual memory size in bytes.
-        var virtualMemoryBytes: Int
+        public var virtualMemoryBytes: Int
         /// Resident memory size in bytes.
-        var residentMemoryBytes: Int
+        public var residentMemoryBytes: Int
         /// Start time of the process since unix epoch in seconds.
-        var startTimeSeconds: Int
+        public var startTimeSeconds: Int
         /// Total user and system CPU time spent in seconds.
-        var cpuSeconds: Int
+        public var cpuSeconds: Int
         /// CPU usage percentage.
-        var cpuUsage: Double
+        public var cpuUsage: Double
         /// Maximum number of open file descriptors.
-        var maxFileDescriptors: Int
+        public var maxFileDescriptors: Int
         /// Number of open file descriptors.
-        var openFileDescriptors: Int
+        public var openFileDescriptors: Int
 
         /// Create a new `Data` instance.
         ///
