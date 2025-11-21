@@ -23,10 +23,7 @@ import ServiceLifecycle
 ///
 /// Example usage:
 /// ```swift
-/// let configuration = SystemMetricsMonitor.Configuration(
-///     pollInterval: .seconds(2)
-/// )
-/// let monitor = SystemMetricsMonitor(configuration: configuration)
+/// let monitor = SystemMetricsMonitor(configuration: .init())
 /// try await monitor.run()
 /// ```
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
@@ -85,8 +82,9 @@ public struct SystemMetricsMonitor: Service {
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - metricsFactory: The metrics factory to use for creating metrics.
+    ///   - logger: An optional custom logger.
     public init(
-        configuration: SystemMetricsMonitor.Configuration,
+        configuration: SystemMetricsMonitor.Configuration = .init(),
         metricsFactory: MetricsFactory,
         logger: Logger? = nil
     ) {
@@ -102,7 +100,11 @@ public struct SystemMetricsMonitor: Service {
     ///
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
-    public init(configuration: SystemMetricsMonitor.Configuration, logger: Logger? = nil) {
+    ///   - logger: An optional custom logger.
+    public init(
+        configuration: SystemMetricsMonitor.Configuration = .init(),
+        logger: Logger? = nil
+    ) {
         self.init(
             configuration: configuration,
             metricsFactory: nil,
@@ -119,10 +121,10 @@ public struct SystemMetricsMonitor: Service {
     /// reporting any metrics.
     package func updateMetrics() async throws {
         guard let metrics = await self.dataProvider.data() else {
-            self.logger.warning("Failed to fetch the latest system metrics")
+            self.logger.debug("Failed to fetch the latest system metrics")
             return
         }
-        self.logger.info(
+        self.logger.debug(
             "Fetched the latest system metrics",
             metadata: [
                 self.configuration.labels.cpuSecondsTotal.description: Logger.MetadataValue("\(metrics.cpuUsage)"),

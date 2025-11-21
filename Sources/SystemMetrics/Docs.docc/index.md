@@ -24,7 +24,7 @@ The following metrics are collected:
 
 ### Basic Usage
 
-After adding `swift-metrics-extras` as a dependency, import the `SystemMetricsMonitor` module:
+After adding `swift-metrics-extras` as a dependency, import the `SystemMetrics` module:
 
 ```swift
 import SystemMetricsMonitor
@@ -140,19 +140,19 @@ extension SystemMetricsMonitor: Service {
 struct Application {
     static let logger = Logger(label: "Application")
     static let metrics = MyMetricsBackendImplementation()
-    
+
     static func main() async throws {
         MetricsSystem.bootstrap(metrics)
 
         let service = FooService()
         let systemMetricsMonitor = SystemMetricsMonitor(configuration: .prometheus)
-        
+
         let serviceGroup = ServiceGroup(
             services: [service, systemMetricsMonitor],
             gracefulShutdownSignals: [.sigterm],
             logger: logger
         )
-        
+
         try await serviceGroup.run()
     }
 }

@@ -23,14 +23,12 @@ extension SystemMetricsMonitor {
         ///
         /// - Parameters:
         ///     - interval: The interval at which system metrics should be updated.
-        ///     - dimensions: The dimensions to include in generated system metrics.
         public init(
             pollInterval interval: Duration = .seconds(2),
-            dimensions: [(String, String)] = []
         ) {
             self.interval = interval
             self.labels = .init()
-            self.dimensions = dimensions
+            self.dimensions = []
         }
 
         /// Create new instance of `SystemMetricsOptions`
