@@ -41,6 +41,6 @@ let package = Package(
                 .product(name: "Logging", package: "swift-log"),
             ],
             path: "Sources"
-        ),
+        )
     ]
 )

@@ -15,8 +15,15 @@
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension SystemMetricsMonitor {
     public struct Configuration: Sendable {
-        package let interval: Duration
+        public static let `default`: Self = .init()
+
+        /// Interval between system metrics data scarpping
+        public var interval: Duration = .seconds(2)
+
+        /// String labels associated with the metrics
         package let labels: SystemMetricsMonitor.Configuration.Labels
+
+        /// Additional dimensions attached to every metric
         package let dimensions: [(String, String)]
 
         /// Create new instance of `SystemMetricsOptions`

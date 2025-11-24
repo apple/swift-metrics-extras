@@ -23,7 +23,8 @@ import ServiceLifecycle
 ///
 /// Example usage:
 /// ```swift
-/// let monitor = SystemMetricsMonitor(configuration: .init())
+/// let logger = Logger(label: "My logger")
+/// let monitor = SystemMetricsMonitor(logger: logger)
 /// try await monitor.run()
 /// ```
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
@@ -87,7 +88,7 @@ public struct SystemMetricsMonitor: Service {
     public init(
         configuration: SystemMetricsMonitor.Configuration = .init(),
         metricsFactory: MetricsFactory,
-        logger: Logger = Logger(label: "SystemMetricsMonitor")
+        logger: Logger
     ) {
         self.init(
             configuration: configuration,
@@ -104,7 +105,7 @@ public struct SystemMetricsMonitor: Service {
     ///   - logger: A custom logger.
     public init(
         configuration: SystemMetricsMonitor.Configuration = .init(),
-        logger: Logger = Logger(label: "SystemMetricsMonitor")
+        logger: Logger
     ) {
         self.init(
             configuration: configuration,

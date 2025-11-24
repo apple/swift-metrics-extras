@@ -15,6 +15,7 @@
 import CoreMetrics
 import Dispatch
 import Foundation
+import Logging
 import MetricsTestKit
 import SystemMetrics
 import Testing
@@ -306,6 +307,7 @@ struct SystemMetricsTests {
 
     @Test("Monitor with default provider uses platform implementation")
     func monitorWithDefaultProvider() async throws {
+        let logger = Logger(label: "test")
         let testMetrics = TestMetrics()
 
         let labels = SystemMetricsMonitor.Configuration.Labels(
@@ -325,7 +327,11 @@ struct SystemMetricsTests {
         )
 
         // No custom provider - uses SystemMetricsMonitorDataProvider internally
-        let monitor = SystemMetricsMonitor(configuration: configuration, metricsFactory: testMetrics)
+        let monitor = SystemMetricsMonitor(
+            configuration: configuration,
+            metricsFactory: testMetrics,
+            logger: logger
+        )
 
         try await monitor.updateMetrics()
 
@@ -401,6 +407,7 @@ struct SystemMetricsInitializationTests {
 
     @Test("Monitor with default provider uses platform implementation")
     func monitorWithDefaultProvider() async throws {
+        let logger = Logger(label: "test")
         let labels = SystemMetricsMonitor.Configuration.Labels(
             prefix: "default_",
             virtualMemoryBytes: "vmb",
@@ -418,7 +425,10 @@ struct SystemMetricsInitializationTests {
         )
 
         // No custom provider - uses SystemMetricsMonitorDataProvider internally
-        let monitor = SystemMetricsMonitor(configuration: configuration)
+        let monitor = SystemMetricsMonitor(
+            configuration: configuration,
+            logger: logger
+        )
 
         try await monitor.updateMetrics()
 

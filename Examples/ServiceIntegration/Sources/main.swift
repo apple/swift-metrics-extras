@@ -37,7 +37,7 @@ struct Application {
         MetricsSystem.bootstrap(testMetrics)
 
         let service = FooService()
-        let systemMetricsMonitor = SystemMetricsMonitor()
+        let systemMetricsMonitor = SystemMetricsMonitor(logger: logger)
 
         let serviceGroup = ServiceGroup(
             services: [service, systemMetricsMonitor],
