@@ -51,12 +51,12 @@ public struct SystemMetricsMonitor: Service {
         configuration: SystemMetricsMonitor.Configuration,
         metricsFactory: MetricsFactory?,
         dataProvider: SystemMetricsProvider,
-        logger: Logger? = nil
+        logger: Logger = Logger(label: "SystemMetricsMonitor")
     ) {
         self.configuration = configuration
         self.metricsFactory = metricsFactory
         self.dataProvider = dataProvider
-        self.logger = logger ?? Logger(label: "SystemMetricsMonitor")
+        self.logger = logger
     }
 
     /// Create a new `SystemMetricsMonitor` with a custom data provider.
@@ -64,10 +64,11 @@ public struct SystemMetricsMonitor: Service {
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - dataProvider: The provider to use for collecting system metrics data.
+    ///   - logger: A custom logger.
     package init(
         configuration: SystemMetricsMonitor.Configuration,
         dataProvider: SystemMetricsProvider,
-        logger: Logger? = nil
+        logger: Logger = Logger(label: "SystemMetricsMonitor")
     ) {
         self.init(
             configuration: configuration,
@@ -82,11 +83,11 @@ public struct SystemMetricsMonitor: Service {
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
     ///   - metricsFactory: The metrics factory to use for creating metrics.
-    ///   - logger: An optional custom logger.
+    ///   - logger: A custom logger.
     public init(
         configuration: SystemMetricsMonitor.Configuration = .init(),
         metricsFactory: MetricsFactory,
-        logger: Logger? = nil
+        logger: Logger = Logger(label: "SystemMetricsMonitor")
     ) {
         self.init(
             configuration: configuration,
@@ -100,10 +101,10 @@ public struct SystemMetricsMonitor: Service {
     ///
     /// - Parameters:
     ///   - configuration: The configuration for the monitor.
-    ///   - logger: An optional custom logger.
+    ///   - logger: A custom logger.
     public init(
         configuration: SystemMetricsMonitor.Configuration = .init(),
-        logger: Logger? = nil
+        logger: Logger = Logger(label: "SystemMetricsMonitor")
     ) {
         self.init(
             configuration: configuration,
