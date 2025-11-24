@@ -31,7 +31,7 @@ extension SystemMetricsMonitor {
         /// - Parameters:
         ///     - interval: The interval at which system metrics should be updated.
         public init(
-            pollInterval interval: Duration = .seconds(2),
+            pollInterval interval: Duration = .seconds(2)
         ) {
             self.interval = interval
             self.labels = .init()
