@@ -19,7 +19,6 @@ import ServiceLifecycle
 import SystemMetrics
 import UnixSignals
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 struct FooService: Service {
     func run() async throws {
         print("FooService starting")
@@ -29,11 +28,10 @@ struct FooService: Service {
 }
 
 @main
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 struct Application {
-    static let logger = Logger(label: "Application")
-
     static func main() async throws {
+        let logger = Logger(label: "Application")
+
         // Bootstrap with some custom metrics backend
         let testMetrics = TestMetrics()
         MetricsSystem.bootstrap(testMetrics)
@@ -43,7 +41,8 @@ struct Application {
 
         let serviceGroup = ServiceGroup(
             services: [service, systemMetricsMonitor],
-            gracefulShutdownSignals: [.sigterm],
+            gracefulShutdownSignals: [.sigint],
+            cancellationSignals: [.sigterm],
             logger: logger
         )
 
