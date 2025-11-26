@@ -12,7 +12,7 @@ Feature abstract – a one sentence summary.
     - [apple/swift-metrics-extras#1](https://github.com/apple/swift-metrics-extras/pull/1)
 - Feature flag: `proposalNNNN`
 - Related links:
-    - [Swift Evolution](https://www.swift.org/swift-evolution/)
+    - [Lightweight proposals process description](https://github.com/apple/swift-metrics-extras/blob/main/Sources/SystemMetrics/Docs.docc/Proposals/Proposals.md)
 
 ### Introduction
 
