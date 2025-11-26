@@ -14,11 +14,15 @@
 
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension SystemMetricsMonitor {
+    /// This object controls the behaviour of the ``SystemMetricsMonitor``.
     public struct Configuration: Sendable {
+        /// Default SystemMetricsMonitor configuration.
+        ///
+        /// See individual property documentation for specific default values.
         public static let `default`: Self = .init()
 
-        /// Interval between system metrics data scarpping
-        public var interval: Duration = .seconds(2)
+        /// Interval between system metrics data scrapping
+        public var interval: Duration
 
         /// String labels associated with the metrics
         package let labels: SystemMetricsMonitor.Configuration.Labels
@@ -26,7 +30,7 @@ extension SystemMetricsMonitor {
         /// Additional dimensions attached to every metric
         package let dimensions: [(String, String)]
 
-        /// Create new instance of `SystemMetricsOptions`
+        /// Create new instance of ``SystemMetricsMonitor.Configuration``
         ///
         /// - Parameters:
         ///     - interval: The interval at which system metrics should be updated.
@@ -38,7 +42,7 @@ extension SystemMetricsMonitor {
             self.dimensions = []
         }
 
-        /// Create new instance of `SystemMetricsOptions`
+        /// Create new instance of ``SystemMetricsMonitor.Configuration``
         ///
         /// - Parameters:
         ///     - interval: The interval at which system metrics should be updated.
