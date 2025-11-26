@@ -30,7 +30,7 @@ extension SystemMetricsMonitor {
         /// Additional dimensions attached to every metric
         package let dimensions: [(String, String)]
 
-        /// Create new instance of ``SystemMetricsMonitor.Configuration``
+        /// Create new instance of ``Configuration``
         ///
         /// - Parameters:
         ///     - interval: The interval at which system metrics should be updated.
