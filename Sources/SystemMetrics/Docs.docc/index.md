@@ -1,6 +1,6 @@
 # ``SystemMetrics``
 
-The System Metrics module provides default process metrics for applications. 
+The System Metrics module provides default process metrics for applications.
 
 ## Overview
 
@@ -56,3 +56,9 @@ This allows end users to add System Metrics like this:
 ```swift
 MetricsSystem.bootstrapWithSystemMetrics(myPrometheusInstance, config: .prometheus)
 ```
+
+## Topics
+
+### Contributing
+
+- <doc:Proposals>
