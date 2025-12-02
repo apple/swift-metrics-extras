@@ -126,11 +126,16 @@ public struct SystemMetricsMonitor: Service {
             self.logger.debug("Failed to fetch the latest system metrics")
             return
         }
-        self.logger.debug(
+        self.logger.trace(
             "Fetched the latest system metrics",
             metadata: [
-                self.configuration.labels.cpuSecondsTotal.description: Logger.MetadataValue("\(metrics.cpuUsage)"),
+                self.configuration.labels.virtualMemoryBytes.description: Logger.MetadataValue("\(metrics.virtualMemoryBytes)"),
+                self.configuration.labels.residentMemoryBytes.description: Logger.MetadataValue("\(metrics.residentMemoryBytes)"),
+                self.configuration.labels.startTimeSeconds.description: Logger.MetadataValue("\(metrics.startTimeSeconds)"),
+                self.configuration.labels.cpuSecondsTotal.description: Logger.MetadataValue("\(metrics.cpuSeconds)"),
                 self.configuration.labels.cpuUsage.description: Logger.MetadataValue("\(metrics.cpuUsage)"),
+                self.configuration.labels.maxFileDescriptors.description: Logger.MetadataValue("\(metrics.maxFileDescriptors)"),
+                self.configuration.labels.openFileDescriptors.description: Logger.MetadataValue("\(metrics.openFileDescriptors)"),
             ]
         )
         let effectiveMetricsFactory = self.metricsFactory ?? MetricsSystem.factory
