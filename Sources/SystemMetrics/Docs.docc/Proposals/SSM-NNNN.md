@@ -12,7 +12,7 @@ Feature abstract – a one sentence summary.
     - [apple/swift-metrics-extras#1](https://github.com/apple/swift-metrics-extras/pull/1)
 - Feature flag: `proposalNNNN`
 - Related links:
-    - [Swift Evolution](https://www.swift.org/swift-evolution/)
+    - [Lightweight proposals process description](https://github.com/apple/swift-metrics-extras/blob/main/Sources/SystemMetrics/Docs.docc/Proposals/Proposals.md)
 
 ### Introduction
 
@@ -26,13 +26,13 @@ Describe the problems that this proposal aims to address, and what workarounds a
 
 Describe your solution to the problem. Provide examples and describe how they work. Show how your solution is better than current workarounds.
 
-This section should focus on what will change for the _adopters_ of Swift Configuration.
+This section should focus on what will change for the _adopters_ of Swift Metrics Extras.
 
 ### Detailed design
 
 Describe the implementation of the feature, a link to a prototype implementation is encouraged here.
 
-This section should focus on what will change for the _contributors_ to Swift Configuration.
+This section should focus on what will change for the _contributors_ to Swift Metrics Extras.
 
 ### API stability
 
