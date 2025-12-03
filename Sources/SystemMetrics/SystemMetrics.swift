@@ -14,8 +14,10 @@
 import CoreMetrics
 import Dispatch
 
-#if os(Linux)
+#if canImport(Glibc)
 import Glibc
+#elseif canImport(Musl)
+import Musl
 #endif
 
 /// A thread-safe wrapper for the global system metrics provider.
@@ -511,7 +513,11 @@ public enum SystemMetrics: Sendable {
             withUnsafeMutablePointer(
                 to: &_rlim,
                 { ptr in
+                    #if canImport(Musl)
+                    getrlimit(RLIMIT_NOFILE, ptr) == 0
+                    #else
                     getrlimit(__rlimit_resource_t(RLIMIT_NOFILE.rawValue), ptr) == 0
+                    #endif
                 }
             )
         else { return nil }
