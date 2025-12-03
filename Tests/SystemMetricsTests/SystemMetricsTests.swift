@@ -18,8 +18,10 @@ import Testing
 
 @testable import SystemMetrics
 
-#if os(Linux)
+#if canImport(Glibc)
 import Glibc
+#elseif canImport(Musl)
+import Musl
 #endif
 
 @Suite("SystemMetrics Tests")
