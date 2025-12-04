@@ -20,24 +20,33 @@ import SystemMetrics
 import UnixSignals
 
 struct FooService: Service {
+    let logger: Logger
+
     func run() async throws {
-        print("FooService starting")
+        self.logger.notice("FooService starting")
         try await Task.sleep(for: .seconds(30))
-        print("FooService done")
+        self.logger.notice("FooService done")
     }
 }
 
 @main
 struct Application {
     static func main() async throws {
-        let logger = Logger(label: "Application")
+        var logger = Logger(label: "Application")
+
+        // Let's see some logs from the SystemMetricsMonitor
+        // while the FooService is running
+        logger.logLevel = .trace
 
         // Bootstrap with some custom metrics backend
         let testMetrics = TestMetrics()
         MetricsSystem.bootstrap(testMetrics)
 
-        let service = FooService()
-        let systemMetricsMonitor = SystemMetricsMonitor(logger: logger)
+        let service = FooService(logger: logger)
+        let systemMetricsMonitor = SystemMetricsMonitor(
+            configuration: .init(pollInterval: .seconds(5)),
+            logger: logger
+        )
 
         let serviceGroup = ServiceGroup(
             services: [service, systemMetricsMonitor],
