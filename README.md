@@ -1,31 +1,15 @@
-# SwiftMetricsExtras
+# System Metrics Monitor
 
-Additional metrics utilities complementing the core [SwiftMetrics](https://github.com/apple/swift-metrics) API.
-
-## SystemMetricsMonitor
-
-Automatically collects and reports process-level system metrics (memory, CPU, file descriptors).
+Automatically collects process-level system metrics (memory, CPU, file descriptors) and reports them through the [SwiftMetrics](https://github.com/apple/swift-metrics) API.
 
 ### Quick Start
 
 ```swift
+import Logging
 import SystemMetrics
 
-let configuration = SystemMetricsMonitor.Configuration(
-    pollInterval: .seconds(2),
-    labels: .init(
-        prefix: "process_",
-        virtualMemoryBytes: "virtual_memory_bytes",
-        residentMemoryBytes: "resident_memory_bytes",
-        startTimeSeconds: "start_time_seconds",
-        cpuSecondsTotal: "cpu_seconds_total",
-        maxFds: "max_fds",
-        openFds: "open_fds",
-        cpuUsage: "cpu_usage"
-    )
-)
-
-let monitor = SystemMetricsMonitor(configuration: configuration)
+let logger = Logger(lable: "MyLogger")
+let monitor = SystemMetricsMonitor(logger: logger)
 try await monitor.run()
 ```
 
@@ -41,7 +25,7 @@ dependencies: [
 ]
 ```
 
-Then add SystemMetrics to your target:
+Then add ``SystemMetrics`` to your target:
 
 ```swift
 .target(
