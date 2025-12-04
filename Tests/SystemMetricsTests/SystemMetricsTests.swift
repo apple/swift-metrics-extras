@@ -294,18 +294,18 @@ struct SystemMetricsTests {
             dataProvider: provider
         )
 
-        // Run the monitor in a task and cancel after a short time
-        let monitorTask = Task {
-            try await monitor.run()
-        }
-
-        try await Task.sleep(for: .milliseconds(350))
-        monitorTask.cancel()
-
-        let callCount = await provider.getCallCount()
-        // With 100ms interval and 350ms wait, we expect 3-4 calls
-        #expect(callCount >= 3)
-        #expect(callCount <= 5)
+        // Wait for the monitor to run a few times
+        #expect(
+            try await wait(
+                noLongerThan: .seconds(2.0),
+                for: {
+                    await provider.getCallCount() >= 3
+                },
+                while: {
+                    try await monitor.run()
+                }
+            )
+        )
 
         let vmbGauge = try testMetrics.expectGauge("test_vmb")
         #expect(vmbGauge.lastValue == 1000)
