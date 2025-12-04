@@ -51,6 +51,10 @@ The monitor will collect and report metrics periodically using the global `Metri
 Polling interval can be configured through the ``SystemMetricsMonitor.Configuration``:
 
 ```swift
+let systemMetricsMonitor = SystemMetricsMonitor(
+    configuration: .init(pollInterval: .seconds(5)),
+    logger: logger
+)
 ```
 
 ## Using custom Metrics Factory
