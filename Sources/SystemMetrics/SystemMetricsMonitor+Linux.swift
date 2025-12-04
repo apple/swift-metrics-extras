@@ -19,6 +19,7 @@ import Glibc
 import Musl
 #endif
 
+#if canImport(Glibc) || canImport(Musl)
 extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     /// Minimal file reading implementation so we don't have to depend on Foundation.
     /// Designed only for the narrow use case of this library.
