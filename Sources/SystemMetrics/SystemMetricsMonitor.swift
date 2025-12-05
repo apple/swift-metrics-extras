@@ -131,7 +131,7 @@ public struct SystemMetricsMonitor: Service {
     /// using the configured labels and dimensions. If metric collection fails
     /// or is unsupported on the current platform, this method returns without
     /// reporting any metrics.
-    package func updateMetrics() async throws {
+    package func updateMetrics() async {
         guard let metrics = await self.dataProvider.data() else {
             self.logger.debug("Failed to fetch the latest system metrics")
             return
@@ -219,7 +219,7 @@ public struct SystemMetricsMonitor: Service {
         for await _ in AsyncTimerSequence(interval: self.configuration.interval, clock: .continuous)
             .cancelOnGracefulShutdown()
         {
-            try await self.updateMetrics()
+            await self.updateMetrics()
         }
     }
 }

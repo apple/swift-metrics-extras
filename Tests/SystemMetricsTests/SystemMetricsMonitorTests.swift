@@ -137,7 +137,7 @@ struct SystemMetricsMonitorTests {
             logger: logger
         )
 
-        try await monitor.updateMetrics()
+        await monitor.updateMetrics()
 
         let vmbGauge = try testMetrics.expectGauge("test_vmb")
         #expect(vmbGauge.lastValue == 1000)
@@ -191,7 +191,7 @@ struct SystemMetricsMonitorTests {
             logger: logger
         )
 
-        try await monitor.updateMetrics()
+        await monitor.updateMetrics()
 
         #expect(testMetrics.recorders.isEmpty)
     }
@@ -238,7 +238,7 @@ struct SystemMetricsMonitorTests {
             logger: logger
         )
 
-        try await monitor.updateMetrics()
+        await monitor.updateMetrics()
 
         let vmbGauge = try testMetrics.expectGauge("test_vmb", dimensions)
         #expect(vmbGauge.lastValue == 1000)
@@ -349,7 +349,7 @@ struct SystemMetricsMonitorTests {
             logger: logger
         )
 
-        try await monitor.updateMetrics()
+        await monitor.updateMetrics()
 
         #if os(Linux)
         let vmbGauge = try testMetrics.expectGauge("test_vmb")
@@ -415,7 +415,7 @@ struct SystemMetricsInitializationTests {
             logger: logger
         )
 
-        try await monitor.updateMetrics()
+        await monitor.updateMetrics()
 
         let vmbGauge = try testMetrics.expectGauge("global_vmb")
         #expect(vmbGauge.lastValue == 1000)
@@ -450,7 +450,7 @@ struct SystemMetricsInitializationTests {
             logger: logger
         )
 
-        try await monitor.updateMetrics()
+        await monitor.updateMetrics()
 
         #if os(Linux)
         let vmbGauge = try testMetrics.expectGauge("default_vmb")
