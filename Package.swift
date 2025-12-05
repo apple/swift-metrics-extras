@@ -57,5 +57,8 @@ var settings = target.swiftSettings ?? []
 
         // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
         settings.append(.enableUpcomingFeature("MemberImportVisibility"))
+
+        // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0409-access-level-on-imports.md
+        settings.append(.enableUpcomingFeature("InternalImportsByDefault"))
         target.swiftSettings = settings
 }

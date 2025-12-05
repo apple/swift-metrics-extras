@@ -11,10 +11,10 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
-import CoreMetrics
+public import CoreMetrics
 import Foundation
-import Logging
-import ServiceLifecycle
+public import Logging
+public import ServiceLifecycle
 
 /// A monitor that periodically collects and reports system metrics.
 ///
