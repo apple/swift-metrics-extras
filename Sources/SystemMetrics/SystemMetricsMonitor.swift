@@ -11,6 +11,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 //===----------------------------------------------------------------------===//
+import AsyncAlgorithms
 public import CoreMetrics
 import Foundation
 public import Logging
@@ -206,13 +207,10 @@ public struct SystemMetricsMonitor: Service {
     /// according to the poll interval specified in the configuration. It will only return
     /// if the async task is cancelled.
     public func run() async throws {
-        try await withTaskCancellationHandler {
-            while !Task.isCancelled {
-                try await self.updateMetrics()
-                try await Task.sleep(for: self.configuration.interval)
-            }
-        } onCancel: {
-            // nothing to do
+        for await _ in AsyncTimerSequence(interval: self.configuration.interval, clock: .continuous)
+            .cancelOnGracefulShutdown()
+        {
+            try await self.updateMetrics()
         }
     }
 }
