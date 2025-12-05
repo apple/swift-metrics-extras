@@ -55,5 +55,7 @@ var settings = target.swiftSettings ?? []
         // Require `any` for existential types.
         settings.append(.enableUpcomingFeature("ExistentialAny"))
 
+        // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
+        settings.append(.enableUpcomingFeature("MemberImportVisibility"))
         target.swiftSettings = settings
 }
