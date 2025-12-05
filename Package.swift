@@ -48,26 +48,26 @@ for target in package.targets
 where [.executable, .test, .regular].contains(
     target.type
 ) {
-var settings = target.swiftSettings ?? []
+    var settings = target.swiftSettings ?? []
 
-        // https://www.swift.org/documentation/concurrency
-        settings.append(.enableUpcomingFeature("StrictConcurrency"))
+    // https://www.swift.org/documentation/concurrency
+    settings.append(.enableUpcomingFeature("StrictConcurrency"))
 
-        // https://github.com/apple/swift-evolution/blob/main/proposals/0335-existential-any.md
-        // Require `any` for existential types.
-        settings.append(.enableUpcomingFeature("ExistentialAny"))
+    // https://github.com/apple/swift-evolution/blob/main/proposals/0335-existential-any.md
+    // Require `any` for existential types.
+    settings.append(.enableUpcomingFeature("ExistentialAny"))
 
-        // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
-        settings.append(.enableUpcomingFeature("MemberImportVisibility"))
+    // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
+    settings.append(.enableUpcomingFeature("MemberImportVisibility"))
 
-        // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0409-access-level-on-imports.md
-        settings.append(.enableUpcomingFeature("InternalImportsByDefault"))
+    // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0409-access-level-on-imports.md
+    settings.append(.enableUpcomingFeature("InternalImportsByDefault"))
 
-        // https://docs.swift.org/compiler/documentation/diagnostics/nonisolated-nonsending-by-default/
-        settings.append(.enableUpcomingFeature("NonisolatedNonsendingByDefault"))
+    // https://docs.swift.org/compiler/documentation/diagnostics/nonisolated-nonsending-by-default/
+    settings.append(.enableUpcomingFeature("NonisolatedNonsendingByDefault"))
 
-        // Ensure all public types are explicitly annotated as Sendable or not Sendable.
-        settings.append(.unsafeFlags(["-Xfrontend", "-require-explicit-sendable"]))
+    // Ensure all public types are explicitly annotated as Sendable or not Sendable.
+    settings.append(.unsafeFlags(["-Xfrontend", "-require-explicit-sendable"]))
 
-        target.swiftSettings = settings
+    target.swiftSettings = settings
 }
