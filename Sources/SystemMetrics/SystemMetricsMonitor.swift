@@ -24,9 +24,18 @@ public import ServiceLifecycle
 ///
 /// Example usage:
 /// ```swift
-/// let logger = Logger(label: "My logger")
+/// import SystemMetrics
+/// import Logging
+///
+/// let logger = Logger(label: "MyService")
 /// let monitor = SystemMetricsMonitor(logger: logger)
-/// try await monitor.run()
+/// let serviceGroup = ServiceGroup(
+///     services: [monitor],
+///     gracefulShutdownSignals: [.sigint],
+///     cancellationSignals: [.sigterm],
+///     logger: logger
+/// )
+/// try await serviceGroup.run()
 /// ```
 @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 public struct SystemMetricsMonitor: Service {
