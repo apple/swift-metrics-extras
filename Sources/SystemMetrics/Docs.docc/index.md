@@ -63,7 +63,6 @@ let systemMetricsMonitor = SystemMetricsMonitor(
 
 ```swift
 let monitor = SystemMetricsMonitor(metricsFactory: myPrometheusMetricsFactory, logger: logger)
-try await monitor.run()
 ```
 
 ## Swift Service Lifecycle integration
