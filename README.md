@@ -26,7 +26,7 @@ let serviceGroup = ServiceGroup(
 try await serviceGroup.run()
 ```
 
-See the [SystemMetrics documentation](Sources/SystemMetrics/Docs.docc/index.md) for details.
+See the [SystemMetrics documentation](https://swiftpackageindex.com/apple/swift-metrics-extras/documentation/systemmetrics) for details.
 
 ## Installation
 
