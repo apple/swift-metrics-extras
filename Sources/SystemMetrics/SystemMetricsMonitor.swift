@@ -104,7 +104,7 @@ public struct SystemMetricsMonitor: Service {
     ///   - configuration: The configuration for the monitor.
     ///   - logger: A custom logger.
     public init(
-        configuration: SystemMetricsMonitor.Configuration = .init(),
+        configuration: SystemMetricsMonitor.Configuration = .default,
         logger: Logger
     ) {
         self.init(
