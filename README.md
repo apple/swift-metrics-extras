@@ -8,9 +8,22 @@ Automatically collects process-level system metrics (memory, CPU, file descripto
 import Logging
 import SystemMetrics
 
+// Create a logger, or use one of the existing loggers
 let logger = Logger(lable: "MyLogger")
+
+// Create the monitor
 let monitor = SystemMetricsMonitor(logger: logger)
-try await monitor.run()
+
+// Create the service
+let serviceGroup = ServiceGroup(
+    services: [monitor],
+    gracefulShutdownSignals: [.sigint],
+    cancellationSignals: [.sigterm],
+    logger: logger
+)
+
+// Start collecting metrics
+try await serviceGroup.run()
 ```
 
 See the [SystemMetrics documentation](Sources/SystemMetrics/Docs.docc/index.md) for details.

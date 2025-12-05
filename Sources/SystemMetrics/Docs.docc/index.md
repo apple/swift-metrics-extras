@@ -40,8 +40,16 @@ let logger = Logger(label: "MyService")
 // Create the monitor
 let monitor = SystemMetricsMonitor(logger: logger)
 
+// Create the service
+let serviceGroup = ServiceGroup(
+    services: [monitor],
+    gracefulShutdownSignals: [.sigint],
+    cancellationSignals: [.sigterm],
+    logger: logger
+)
+
 // Start collecting metrics
-try await monitor.run()
+try await serviceGroup.run()
 ```
 
 The monitor will collect and report metrics periodically using the global `MetricsSystem`.
