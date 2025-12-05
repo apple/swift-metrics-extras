@@ -4,27 +4,27 @@ Collect and report process-level system metrics in your application.
 
 ## Overview
 
-The ``SystemMetricsMonitor`` automatically collects key process metrics and reports them through the Swift Metrics API.
+``SystemMetricsMonitor`` automatically collects key process metrics and reports them through the Swift Metrics API.
 
-### Available Metrics
+### Available metrics
 
 The following metrics are collected:
 
-- **Virtual Memory**: Total virtual memory allocated by the process (in bytes)
-- **Resident Memory**: Physical memory currently used by the process (in bytes)
-- **Start Time**: Process start time since Unix epoch (in seconds)
-- **CPU Time**: Cumulative CPU time consumed (in seconds)
-- **CPU Usage**: Current CPU usage percentage
-- **Max File Descriptors**: Maximum number of file descriptors the process can open
-- **Open File Descriptors**: Number of file descriptors currently open
+- **Virtual Memory**: Total virtual memory allocated by the process (in bytes).
+- **Resident Memory**: Physical memory currently used by the process (in bytes).
+- **Start Time**: Process start time since Unix epoch (in seconds).
+- **CPU Time**: Cumulative CPU time consumed (in seconds).
+- **CPU Usage**: Current CPU usage percentage.
+- **Max File Descriptors**: Maximum number of file descriptors the process can open.
+- **Open File Descriptors**: Number of file descriptors currently open.
 
 > Note: These metrics are currently implemented on Linux platforms only.
 
-## Getting Started
+## Getting started
 
-### Basic Usage
+### Basic usage
 
-After adding `swift-metrics-extras` as a dependency, import the `SystemMetricsMonitor` module:
+After adding `swift-metrics-extras` as a dependency, import the `SystemMetrics` module:
 
 ```swift
 import SystemMetrics
@@ -66,9 +66,9 @@ let monitor = SystemMetricsMonitor(metricsFactory: myPrometheusMetricsFactory, l
 try await monitor.run()
 ```
 
-## Swift Service Lifecycle Integration
+## Swift Service Lifecycle integration
 
-[swift-service-lifecycle](https://github.com/swift-server/swift-service-lifecycle) provides a convenient way to manage background service tasks, which is compatible with the `SystemMetricsMonitor`:
+[Swift Service Lifecycle](https://github.com/swift-server/swift-service-lifecycle) provides a convenient way to manage background service tasks, which is compatible with the `SystemMetricsMonitor`:
 
 ```swift
 import SystemMetrics
@@ -78,10 +78,9 @@ import Metrics
 
 @main
 struct Application {
-    static let logger = Logger(label: "Application")
-    static let metrics = MyMetricsBackendImplementation()
-
     static func main() async throws {
+        let logger = Logger(label: "Application")
+        let metrics = MyMetricsBackendImplementation()
         MetricsSystem.bootstrap(metrics)
 
         let service = FooService()

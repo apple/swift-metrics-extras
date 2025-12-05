@@ -86,7 +86,7 @@ public struct SystemMetricsMonitor: Service {
     ///   - metricsFactory: The metrics factory to use for creating metrics.
     ///   - logger: A custom logger.
     public init(
-        configuration: SystemMetricsMonitor.Configuration = .init(),
+        configuration: SystemMetricsMonitor.Configuration = .default,
         metricsFactory: MetricsFactory,
         logger: Logger
     ) {

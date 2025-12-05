@@ -1,8 +1,8 @@
-# System Metrics Monitor
+# Swift System Metrics
 
 Automatically collects process-level system metrics (memory, CPU, file descriptors) and reports them through the [SwiftMetrics](https://github.com/apple/swift-metrics) API.
 
-### Quick Start
+### Quick start
 
 ```swift
 import Logging
