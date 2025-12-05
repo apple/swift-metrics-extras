@@ -1,6 +1,6 @@
 # ``SystemMetrics``
 
-Collect and report process-level system metrics for the applications.
+Collect and report process-level system metrics in your application.
 
 ## Overview
 
