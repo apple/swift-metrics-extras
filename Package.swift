@@ -63,5 +63,9 @@ var settings = target.swiftSettings ?? []
 
         // https://docs.swift.org/compiler/documentation/diagnostics/nonisolated-nonsending-by-default/
         settings.append(.enableUpcomingFeature("NonisolatedNonsendingByDefault"))
+
+        // Ensure all public types are explicitly annotated as Sendable or not Sendable.
+        settings.append(.unsafeFlags(["-Xfrontend", "-require-explicit-sendable"]))
+
         target.swiftSettings = settings
 }
