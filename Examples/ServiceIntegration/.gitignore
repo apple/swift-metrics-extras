@@ -1,0 +1,11 @@
+.DS_Store
+/.build
+/Packages
+/*.xcodeproj
+.xcode
+.SourceKitten
+*.orig
+.swiftpm
+.idea
+Package.resolved
+.vscode

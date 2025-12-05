@@ -1,64 +1,106 @@
 # ``SystemMetrics``
 
-The System Metrics module provides default process metrics for applications.
+Collect and report process-level system metrics in your application.
 
 ## Overview
 
-The following metrics are exposed:
+``SystemMetricsMonitor`` automatically collects key process metrics and reports them through the Swift Metrics API.
 
-- Virtual memory in Bytes.
-- Resident memory in Bytes.
-- Application start time in Seconds.
-- Total CPU seconds.
-- Maximum number of file descriptors.
-- Number of file descriptors currently in use.
+### Available metrics
 
-> Note: Currently these metrics are only implemented on Linux platforms, and not on Darwin or Windows.
+The following metrics are collected:
 
-## Using System Metrics
+- **Virtual Memory**: Total virtual memory allocated by the process (in bytes), reported as `process_virtual_memory_bytes`.
+- **Resident Memory**: Physical memory currently used by the process (in bytes), reported as `process_resident_memory_bytes`.
+- **Start Time**: Process start time since Unix epoch (in seconds), reported as `process_start_time_seconds`.
+- **CPU Time**: Cumulative CPU time consumed (in seconds), reported as `process_cpu_seconds_total`.
+- **CPU Usage**: Current CPU usage percentage, reported as `process_cpu_usage`.
+- **Max File Descriptors**: Maximum number of file descriptors the process can open, reported as `process_max_fds`.
+- **Open File Descriptors**: Number of file descriptors currently open, reported as `process_open_fds`.
 
-After adding `swift-metrics-extras` as a dependency you can import the `SystemMetrics` module.
+> Note: These metrics are currently implemented on Linux platforms only.
+
+## Getting started
+
+### Basic usage
+
+After adding `swift-metrics-extras` as a dependency, import the `SystemMetrics` module:
 
 ```swift
 import SystemMetrics
 ```
 
-This makes the System Metrics API available. This adds a new method to `MetricsSystem` called `bootstrapWithSystemMetrics`. Calling this method will call `MetricsSystem.bootstrap` as well as bootstrapping System Metrics.
+Create and start a monitor with default settings and a logger:
 
-`bootstrapWithSystemMetrics` takes a `SystemMetrics.Configuration` object to configure the system metrics. The config has the following properties:
-
-- interval: The interval at which `SystemMetrics` are being calculated & exported.
-- dataProvider: A closure returning `SystemMetrics.Data?`. When `nil`, no metrics are exported (the default on non-Linux platforms). `SystemMetrics.Data` holds all the values mentioned above.
-- labels: `SystemMetrics.Labels` hold a string label for each of the above mentioned metrics that will be used for the metric labels, along with a prefix that will be used for all above mentioned metrics.
-
-Swift Metrics backend implementations are encouraged to provide static extensions to `SystemMetrics.Configuration` that fit the requirements of their specific backends. For example:
 ```swift
-public extension SystemMetrics.Configuration {
-    /// `SystemMetrics.Configuration` with Prometheus style labels.
-    ///
-    /// For more information see `SystemMetrics.Configuration`
-    static let prometheus = SystemMetrics.Configuration(
-        labels: .init(
-            prefix: "process_",
-            virtualMemoryBytes: "virtual_memory_bytes",
-            residentMemoryBytes: "resident_memory_bytes",
-            startTimeSeconds: "start_time_seconds",
-            cpuSecondsTotal: "cpu_seconds_total",
-            maxFds: "max_fds",
-            openFds: "open_fds"
+// Import and create a logger, or use one of the existing loggers
+import Logging
+let logger = Logger(label: "MyService")
+
+// Create the monitor
+let monitor = SystemMetricsMonitor(logger: logger)
+
+// Create the service
+let serviceGroup = ServiceGroup(
+    services: [monitor],
+    gracefulShutdownSignals: [.sigint],
+    cancellationSignals: [.sigterm],
+    logger: logger
+)
+
+// Start collecting metrics
+try await serviceGroup.run()
+```
+
+The monitor will collect and report metrics periodically using the global `MetricsSystem`.
+
+## Configuration
+
+Polling interval can be configured through the ``SystemMetricsMonitor/Configuration``:
+
+```swift
+let systemMetricsMonitor = SystemMetricsMonitor(
+    configuration: .init(pollInterval: .seconds(5)),
+    logger: logger
+)
+```
+
+## Using custom Metrics Factory
+
+``SystemMetricsMonitor`` can be initialized with a specific metrics factory, so it does not rely on the global `MetricsSystem`:
+
+```swift
+let monitor = SystemMetricsMonitor(metricsFactory: myPrometheusMetricsFactory, logger: logger)
+```
+
+## Swift Service Lifecycle integration
+
+[Swift Service Lifecycle](https://github.com/swift-server/swift-service-lifecycle) provides a convenient way to manage background service tasks, which is compatible with the `SystemMetricsMonitor`:
+
+```swift
+import SystemMetrics
+import ServiceLifecycle
+import UnixSignals
+import Metrics
+
+@main
+struct Application {
+    static func main() async throws {
+        let logger = Logger(label: "Application")
+        let metrics = MyMetricsBackendImplementation()
+        MetricsSystem.bootstrap(metrics)
+
+        let service = FooService()
+        let systemMetricsMonitor = SystemMetricsMonitor(logger: logger)
+
+        let serviceGroup = ServiceGroup(
+            services: [service, systemMetricsMonitor],
+            gracefulShutdownSignals: [.sigint],
+            cancellationSignals: [.sigterm],
+            logger: logger
         )
-    )
+
+        try await serviceGroup.run()
+    }
 }
 ```
-
-This allows end users to add System Metrics like this:
-
-```swift
-MetricsSystem.bootstrapWithSystemMetrics(myPrometheusInstance, config: .prometheus)
-```
-
-## Topics
-
-### Contributing
-
-- <doc:Proposals>
