@@ -52,7 +52,7 @@ public struct SystemMetricsMonitor: Service {
         configuration: SystemMetricsMonitor.Configuration,
         metricsFactory: (any MetricsFactory)?,
         dataProvider: any SystemMetricsProvider,
-        logger: Logger = Logger(label: "SystemMetricsMonitor")
+        logger: Logger
     ) {
         self.configuration = configuration
         self.metricsFactory = metricsFactory
@@ -69,7 +69,7 @@ public struct SystemMetricsMonitor: Service {
     package init(
         configuration: SystemMetricsMonitor.Configuration,
         dataProvider: any SystemMetricsProvider,
-        logger: Logger = Logger(label: "SystemMetricsMonitor")
+        logger: Logger
     ) {
         self.init(
             configuration: configuration,

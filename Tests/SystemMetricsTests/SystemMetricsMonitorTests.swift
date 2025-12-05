@@ -35,8 +35,8 @@ struct MockMetricsProvider: SystemMetricsProvider {
     }
 }
 
-@Suite("SystemMetrics Tests")
-struct SystemMetricsTests {
+@Suite("SystemMetricsMonitor Tests")
+struct SystemMetricsMonitorTests {
     @Test("Custom labels with prefix are correctly formatted")
     @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func systemMetricsLabels() throws {
@@ -100,6 +100,7 @@ struct SystemMetricsTests {
     @Test("Monitor with custom provider reports metrics correctly")
     @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorWithCustomProvider() async throws {
+        let logger = Logger(label: "SystemMetricsMonitorTests")
         let mockData = SystemMetricsMonitor.Data(
             virtualMemoryBytes: 1000,
             residentMemoryBytes: 2000,
@@ -132,7 +133,8 @@ struct SystemMetricsTests {
         let monitor = SystemMetricsMonitor(
             configuration: configuration,
             metricsFactory: testMetrics,
-            dataProvider: provider
+            dataProvider: provider,
+            logger: logger
         )
 
         try await monitor.updateMetrics()
@@ -162,6 +164,7 @@ struct SystemMetricsTests {
     @Test("Monitor with nil provider does not report metrics")
     @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorWithNilProvider() async throws {
+        let logger = Logger(label: "SystemMetricsMonitorTests")
         let provider = MockMetricsProvider(mockData: nil)
         let testMetrics = TestMetrics()
 
@@ -184,7 +187,8 @@ struct SystemMetricsTests {
         let monitor = SystemMetricsMonitor(
             configuration: configuration,
             metricsFactory: testMetrics,
-            dataProvider: provider
+            dataProvider: provider,
+            logger: logger
         )
 
         try await monitor.updateMetrics()
@@ -195,6 +199,7 @@ struct SystemMetricsTests {
     @Test("Monitor with dimensions includes them in recorded metrics")
     @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorWithDimensions() async throws {
+        let logger = Logger(label: "SystemMetricsMonitorTests")
         let mockData = SystemMetricsMonitor.Data(
             virtualMemoryBytes: 1000,
             residentMemoryBytes: 2000,
@@ -229,7 +234,8 @@ struct SystemMetricsTests {
         let monitor = SystemMetricsMonitor(
             configuration: configuration,
             metricsFactory: testMetrics,
-            dataProvider: provider
+            dataProvider: provider,
+            logger: logger
         )
 
         try await monitor.updateMetrics()
@@ -241,6 +247,8 @@ struct SystemMetricsTests {
     @Test("Monitor run() method collects metrics periodically")
     @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorRunPeriodically() async throws {
+        let logger = Logger(label: "SystemMetricsMonitorTests")
+
         actor CallCountingProvider: SystemMetricsProvider {
             var callCount = 0
             let mockData: SystemMetricsMonitor.Data
@@ -291,7 +299,8 @@ struct SystemMetricsTests {
         let monitor = SystemMetricsMonitor(
             configuration: configuration,
             metricsFactory: testMetrics,
-            dataProvider: provider
+            dataProvider: provider,
+            logger: logger
         )
 
         // Wait for the monitor to run a few times
@@ -370,6 +379,7 @@ struct SystemMetricsInitializationTests {
     @Test("Monitor uses global MetricsSystem when no factory provided")
     @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorUsesGlobalMetricsSystem() async throws {
+        let logger = Logger(label: "SystemMetricsMonitorTests")
         let mockData = SystemMetricsMonitor.Data(
             virtualMemoryBytes: 1000,
             residentMemoryBytes: 2000,
@@ -401,7 +411,8 @@ struct SystemMetricsInitializationTests {
         // No custom factory provided - should use global MetricsSystem
         let monitor = SystemMetricsMonitor(
             configuration: configuration,
-            dataProvider: provider
+            dataProvider: provider,
+            logger: logger
         )
 
         try await monitor.updateMetrics()
