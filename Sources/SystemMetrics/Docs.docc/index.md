@@ -10,13 +10,13 @@ Collect and report process-level system metrics in your application.
 
 The following metrics are collected:
 
-- **Virtual Memory**: Total virtual memory allocated by the process (in bytes).
-- **Resident Memory**: Physical memory currently used by the process (in bytes).
-- **Start Time**: Process start time since Unix epoch (in seconds).
-- **CPU Time**: Cumulative CPU time consumed (in seconds).
-- **CPU Usage**: Current CPU usage percentage.
-- **Max File Descriptors**: Maximum number of file descriptors the process can open.
-- **Open File Descriptors**: Number of file descriptors currently open.
+- **Virtual Memory**: Total virtual memory allocated by the process (in bytes), reported as `process_virtual_memory_bytes`.
+- **Resident Memory**: Physical memory currently used by the process (in bytes), reported as `process_resident_memory_bytes`.
+- **Start Time**: Process start time since Unix epoch (in seconds), reported as `process_start_time_seconds`.
+- **CPU Time**: Cumulative CPU time consumed (in seconds), reported as `process_cpu_seconds_total`.
+- **CPU Usage**: Current CPU usage percentage, reported as `process_cpu_usage`.
+- **Max File Descriptors**: Maximum number of file descriptors the process can open, reported as `process_max_fds`.
+- **Open File Descriptors**: Number of file descriptors currently open, reported as `process_open_fds`.
 
 > Note: These metrics are currently implemented on Linux platforms only.
 
