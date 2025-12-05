@@ -50,9 +50,6 @@ where [.executable, .test, .regular].contains(
 ) {
     var settings = target.swiftSettings ?? []
 
-    // https://www.swift.org/documentation/concurrency
-    settings.append(.enableUpcomingFeature("StrictConcurrency"))
-
     // https://github.com/apple/swift-evolution/blob/main/proposals/0335-existential-any.md
     // Require `any` for existential types.
     settings.append(.enableUpcomingFeature("ExistentialAny"))
