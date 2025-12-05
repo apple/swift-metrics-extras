@@ -249,21 +249,21 @@ extension SystemMetricsMonitor {
     /// System Metrics data.
     ///
     /// The current list of metrics exposed is a superset of the [Prometheus Client Library Guidelines](https://prometheus.io/docs/instrumenting/writing_clientlibs/#standard-and-runtime-collectors).
-    public struct Data: Sendable {
+    package struct Data: Sendable {
         /// Virtual memory size in bytes.
-        public var virtualMemoryBytes: Int
+        package var virtualMemoryBytes: Int
         /// Resident memory size in bytes.
-        public var residentMemoryBytes: Int
+        package var residentMemoryBytes: Int
         /// Start time of the process since unix epoch in seconds.
-        public var startTimeSeconds: Int
+        package var startTimeSeconds: Int
         /// Total user and system CPU time spent in seconds.
-        public var cpuSeconds: Int
+        package var cpuSeconds: Int
         /// CPU usage percentage.
-        public var cpuUsage: Double
+        package var cpuUsage: Double
         /// Maximum number of open file descriptors.
-        public var maxFileDescriptors: Int
+        package var maxFileDescriptors: Int
         /// Number of open file descriptors.
-        public var openFileDescriptors: Int
+        package var openFileDescriptors: Int
 
         /// Create a new `Data` instance.
         ///
@@ -275,7 +275,7 @@ extension SystemMetricsMonitor {
         ///     - cpuUsage: Total CPU usage percentage.
         ///     - maxFileDescriptors: Maximum number of open file descriptors.
         ///     - openFileDescriptors: Number of open file descriptors.
-        public init(
+        package init(
             virtualMemoryBytes: Int,
             residentMemoryBytes: Int,
             startTimeSeconds: Int,
