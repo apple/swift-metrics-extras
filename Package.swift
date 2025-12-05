@@ -42,24 +42,18 @@ let package = Package(
     ]
 )
 
-for target in package.targets {
-    var settings = target.swiftSettings ?? []
-    settings.append(.enableExperimentalFeature("StrictConcurrency=complete"))
-    target.swiftSettings = settings
-}
+for target in package.targets
+where [.executable, .test, .regular].contains(
+    target.type
+) {
+var settings = target.swiftSettings ?? []
 
-// ---    STANDARD CROSS-REPO SETTINGS DO NOT EDIT   --- //
-for target in package.targets {
-    switch target.type {
-    case .regular, .test, .executable:
-        var settings = target.swiftSettings ?? []
-        // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
-        settings.append(.enableUpcomingFeature("MemberImportVisibility"))
+        // https://www.swift.org/documentation/concurrency
+        settings.append(.enableUpcomingFeature("StrictConcurrency"))
+
+        // https://github.com/apple/swift-evolution/blob/main/proposals/0335-existential-any.md
+        // Require `any` for existential types.
+        settings.append(.enableUpcomingFeature("ExistentialAny"))
+
         target.swiftSettings = settings
-    case .macro, .plugin, .system, .binary:
-        ()  // not applicable
-    @unknown default:
-        ()  // we don't know what to do here, do nothing
-    }
 }
-// --- END: STANDARD CROSS-REPO SETTINGS DO NOT EDIT --- //

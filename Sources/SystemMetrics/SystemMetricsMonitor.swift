@@ -33,10 +33,10 @@ public struct SystemMetricsMonitor: Service {
     let configuration: SystemMetricsMonitor.Configuration
 
     /// Optional metrics factory for testing. If nil, uses `MetricsSystem.factory`.
-    let metricsFactory: MetricsFactory?
+    let metricsFactory: (any MetricsFactory)?
 
     /// The provider responsible for collecting system metrics data.
-    let dataProvider: SystemMetricsProvider
+    let dataProvider: any SystemMetricsProvider
 
     /// Internal logger
     let logger: Logger
@@ -50,8 +50,8 @@ public struct SystemMetricsMonitor: Service {
     ///   - logger: A custom logger.
     package init(
         configuration: SystemMetricsMonitor.Configuration,
-        metricsFactory: MetricsFactory?,
-        dataProvider: SystemMetricsProvider,
+        metricsFactory: (any MetricsFactory)?,
+        dataProvider: any SystemMetricsProvider,
         logger: Logger = Logger(label: "SystemMetricsMonitor")
     ) {
         self.configuration = configuration
@@ -68,7 +68,7 @@ public struct SystemMetricsMonitor: Service {
     ///   - logger: A custom logger.
     package init(
         configuration: SystemMetricsMonitor.Configuration,
-        dataProvider: SystemMetricsProvider,
+        dataProvider: any SystemMetricsProvider,
         logger: Logger = Logger(label: "SystemMetricsMonitor")
     ) {
         self.init(
@@ -87,7 +87,7 @@ public struct SystemMetricsMonitor: Service {
     ///   - logger: A custom logger.
     public init(
         configuration: SystemMetricsMonitor.Configuration = .default,
-        metricsFactory: MetricsFactory,
+        metricsFactory: any MetricsFactory,
         logger: Logger
     ) {
         self.init(
