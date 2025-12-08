@@ -164,7 +164,6 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     ///
     /// - Returns: A `Data` struct containing all collected metrics, or `nil` if
     ///            metrics could not be collected (e.g., due to file read errors).
-    @Sendable
     package static func linuxSystemMetrics() -> SystemMetricsMonitor.Data? {
         /// The current implementation below reads /proc/self/stat. Then,
         /// presumably to accommodate whitespace in the `comm` field
