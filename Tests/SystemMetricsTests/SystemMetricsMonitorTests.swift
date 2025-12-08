@@ -186,9 +186,15 @@ struct SystemMetricsMonitorTests {
             logger: logger
         )
 
+        // Recorders are created along with the Monitor
+        #expect(testMetrics.recorders.count == 7)
+
         await monitor.updateMetrics()
 
-        #expect(testMetrics.recorders.isEmpty)
+        // But no values recorded
+        for recorder in testMetrics.recorders {
+            #expect(recorder.values.isEmpty)
+        }
     }
 
     @Test("Monitor with dimensions includes them in recorded metrics")
@@ -342,18 +348,14 @@ struct SystemMetricsMonitorTests {
         )
 
         await monitor.updateMetrics()
+        let vmbGauge = try testMetrics.expectGauge("test_vmb")
 
         #if os(Linux)
-        let vmbGauge = try testMetrics.expectGauge("test_vmb")
         #expect(vmbGauge.lastValue != nil)
         #expect(vmbGauge.lastValue! > 0)
         #else
         // On macOS, the provider returns nil, so no metrics should be recorded
-        #expect(
-            !testMetrics.recorders.contains(where: { recorder in
-                recorder.label == "test_vmb"
-            })
-        )
+        #expect(vmbGauge.lastValue == nil)
         #endif
     }
 }
@@ -441,18 +443,14 @@ struct SystemMetricsInitializationTests {
         )
 
         await monitor.updateMetrics()
+        let vmbGauge = try testMetrics.expectGauge("default_vmb")
 
         #if os(Linux)
-        let vmbGauge = try testMetrics.expectGauge("default_vmb")
         #expect(vmbGauge.lastValue != nil)
         #expect(vmbGauge.lastValue! > 0)
         #else
         // On macOS, the provider returns nil, so no metrics should be recorded
-        #expect(
-            !testMetrics.recorders.contains(where: { recorder in
-                recorder.label == "default_vmb"
-            })
-        )
+        #expect(vmbGauge.lastValue == nil)
         #endif
     }
 }

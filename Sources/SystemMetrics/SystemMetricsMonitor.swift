@@ -50,6 +50,15 @@ public struct SystemMetricsMonitor: Service {
     /// Internal logger
     let logger: Logger
 
+    /// Pre-initialized gauges for metrics reporting
+    let virtualMemoryBytesGauge: Gauge
+    let residentMemoryBytesGauge: Gauge
+    let startTimeSecondsGauge: Gauge
+    let cpuSecondsTotalGauge: Gauge
+    let cpuUsageGauge: Gauge
+    let maxFileDescriptorsGauge: Gauge
+    let openFileDescriptorsGauge: Gauge
+
     /// Create a new ``SystemMetricsMonitor`` using the global metrics factory.
     ///
     /// - Parameters:
@@ -67,6 +76,44 @@ public struct SystemMetricsMonitor: Service {
         self.metricsFactory = metricsFactory
         self.dataProvider = dataProvider
         self.logger = logger
+
+        // Initialize gauges once to avoid repeated creation in updateMetrics()
+        let effectiveMetricsFactory = metricsFactory ?? MetricsSystem.factory
+        self.virtualMemoryBytesGauge = Gauge(
+            label: configuration.labels.label(for: \.virtualMemoryBytes),
+            dimensions: configuration.dimensions,
+            factory: effectiveMetricsFactory
+        )
+        self.residentMemoryBytesGauge = Gauge(
+            label: configuration.labels.label(for: \.residentMemoryBytes),
+            dimensions: configuration.dimensions,
+            factory: effectiveMetricsFactory
+        )
+        self.startTimeSecondsGauge = Gauge(
+            label: configuration.labels.label(for: \.startTimeSeconds),
+            dimensions: configuration.dimensions,
+            factory: effectiveMetricsFactory
+        )
+        self.cpuSecondsTotalGauge = Gauge(
+            label: configuration.labels.label(for: \.cpuSecondsTotal),
+            dimensions: configuration.dimensions,
+            factory: effectiveMetricsFactory
+        )
+        self.cpuUsageGauge = Gauge(
+            label: configuration.labels.label(for: \.cpuUsage),
+            dimensions: configuration.dimensions,
+            factory: effectiveMetricsFactory
+        )
+        self.maxFileDescriptorsGauge = Gauge(
+            label: configuration.labels.label(for: \.maxFileDescriptors),
+            dimensions: configuration.dimensions,
+            factory: effectiveMetricsFactory
+        )
+        self.openFileDescriptorsGauge = Gauge(
+            label: configuration.labels.label(for: \.openFileDescriptors),
+            dimensions: configuration.dimensions,
+            factory: effectiveMetricsFactory
+        )
     }
 
     /// Create a new ``SystemMetricsMonitor`` with a custom data provider.
@@ -157,56 +204,13 @@ public struct SystemMetricsMonitor: Service {
                 ),
             ]
         )
-        let effectiveMetricsFactory = self.metricsFactory ?? MetricsSystem.factory
-        Gauge(
-            label: self.configuration.labels.label(for: \.virtualMemoryBytes),
-            dimensions: self.configuration.dimensions,
-            factory: effectiveMetricsFactory
-        ).record(
-            metrics.virtualMemoryBytes
-        )
-        Gauge(
-            label: self.configuration.labels.label(for: \.residentMemoryBytes),
-            dimensions: self.configuration.dimensions,
-            factory: effectiveMetricsFactory
-        ).record(
-            metrics.residentMemoryBytes
-        )
-        Gauge(
-            label: self.configuration.labels.label(for: \.startTimeSeconds),
-            dimensions: self.configuration.dimensions,
-            factory: effectiveMetricsFactory
-        ).record(
-            metrics.startTimeSeconds
-        )
-        Gauge(
-            label: self.configuration.labels.label(for: \.cpuSecondsTotal),
-            dimensions: self.configuration.dimensions,
-            factory: effectiveMetricsFactory
-        ).record(
-            metrics.cpuSeconds
-        )
-        Gauge(
-            label: self.configuration.labels.label(for: \.maxFileDescriptors),
-            dimensions: self.configuration.dimensions,
-            factory: effectiveMetricsFactory
-        ).record(
-            metrics.maxFileDescriptors
-        )
-        Gauge(
-            label: self.configuration.labels.label(for: \.openFileDescriptors),
-            dimensions: self.configuration.dimensions,
-            factory: effectiveMetricsFactory
-        ).record(
-            metrics.openFileDescriptors
-        )
-        Gauge(
-            label: self.configuration.labels.label(for: \.cpuUsage),
-            dimensions: self.configuration.dimensions,
-            factory: effectiveMetricsFactory
-        ).record(
-            metrics.cpuUsage
-        )
+        self.virtualMemoryBytesGauge.record(metrics.virtualMemoryBytes)
+        self.residentMemoryBytesGauge.record(metrics.residentMemoryBytes)
+        self.startTimeSecondsGauge.record(metrics.startTimeSeconds)
+        self.cpuSecondsTotalGauge.record(metrics.cpuSeconds)
+        self.cpuUsageGauge.record(metrics.cpuUsage)
+        self.maxFileDescriptorsGauge.record(metrics.maxFileDescriptors)
+        self.openFileDescriptorsGauge.record(metrics.openFileDescriptors)
     }
 
     /// Start the monitoring loop, collecting and reporting metrics at the configured interval.
