@@ -37,7 +37,6 @@ public import ServiceLifecycle
 /// )
 /// try await serviceGroup.run()
 /// ```
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 public struct SystemMetricsMonitor: Service {
     /// Configuration for the system metrics monitor.
     let configuration: SystemMetricsMonitor.Configuration
@@ -229,7 +228,6 @@ public struct SystemMetricsMonitor: Service {
 /// Types conforming to this protocol can provide system metrics data
 /// to a ``SystemMetricsMonitor``. This allows for flexible data collection
 /// strategies, including custom implementations for testing.
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 package protocol SystemMetricsProvider: Sendable {
     /// Retrieve current system metrics data.
     ///
@@ -242,7 +240,6 @@ package protocol SystemMetricsProvider: Sendable {
 ///
 /// This provider collects process-level metrics from the operating system.
 /// It is used as the default data provider when no custom provider is specified.
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 package struct SystemMetricsMonitorDataProvider: Sendable {
     let configuration: SystemMetricsMonitor.Configuration
 
@@ -251,7 +248,6 @@ package struct SystemMetricsMonitorDataProvider: Sendable {
     }
 }
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension SystemMetricsMonitor {
     /// System Metrics data.
     ///

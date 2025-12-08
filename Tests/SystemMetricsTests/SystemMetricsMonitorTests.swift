@@ -26,7 +26,6 @@ import Glibc
 import Musl
 #endif
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 struct MockMetricsProvider: SystemMetricsProvider {
     let mockData: SystemMetricsMonitor.Data?
 
@@ -38,7 +37,6 @@ struct MockMetricsProvider: SystemMetricsProvider {
 @Suite("SystemMetricsMonitor Tests")
 struct SystemMetricsMonitorTests {
     @Test("Custom labels with prefix are correctly formatted")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func systemMetricsLabels() throws {
         let labels = SystemMetricsMonitor.Configuration.Labels(
             prefix: "pfx+",
@@ -61,7 +59,6 @@ struct SystemMetricsMonitorTests {
     }
 
     @Test("Configuration preserves all provided settings")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func systemMetricsConfiguration() throws {
         let labels = SystemMetricsMonitor.Configuration.Labels(
             prefix: "pfx_",
@@ -98,7 +95,6 @@ struct SystemMetricsMonitorTests {
     }
 
     @Test("Monitor with custom provider reports metrics correctly")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorWithCustomProvider() async throws {
         let logger = Logger(label: "SystemMetricsMonitorTests")
         let mockData = SystemMetricsMonitor.Data(
@@ -162,7 +158,6 @@ struct SystemMetricsMonitorTests {
     }
 
     @Test("Monitor with nil provider does not report metrics")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorWithNilProvider() async throws {
         let logger = Logger(label: "SystemMetricsMonitorTests")
         let provider = MockMetricsProvider(mockData: nil)
@@ -197,7 +192,6 @@ struct SystemMetricsMonitorTests {
     }
 
     @Test("Monitor with dimensions includes them in recorded metrics")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorWithDimensions() async throws {
         let logger = Logger(label: "SystemMetricsMonitorTests")
         let mockData = SystemMetricsMonitor.Data(
@@ -245,7 +239,6 @@ struct SystemMetricsMonitorTests {
     }
 
     @Test("Monitor run() method collects metrics periodically")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorRunPeriodically() async throws {
         let logger = Logger(label: "SystemMetricsMonitorTests")
 
@@ -321,7 +314,6 @@ struct SystemMetricsMonitorTests {
     }
 
     @Test("Monitor with default provider uses platform implementation")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorWithDefaultProvider() async throws {
         let logger = Logger(label: "test")
         let testMetrics = TestMetrics()
@@ -377,7 +369,6 @@ struct SystemMetricsInitializationTests {
     let testMetrics: TestMetrics = Self.sharedSetup
 
     @Test("Monitor uses global MetricsSystem when no factory provided")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorUsesGlobalMetricsSystem() async throws {
         let logger = Logger(label: "SystemMetricsMonitorTests")
         let mockData = SystemMetricsMonitor.Data(
@@ -425,7 +416,6 @@ struct SystemMetricsInitializationTests {
     }
 
     @Test("Monitor with default provider uses platform implementation")
-    @available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
     func monitorWithDefaultProvider() async throws {
         let logger = Logger(label: "test")
         let labels = SystemMetricsMonitor.Configuration.Labels(

@@ -12,7 +12,6 @@
 //
 //===----------------------------------------------------------------------===//
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension SystemMetricsMonitor {
     /// This object controls the behaviour of the ``SystemMetricsMonitor``.
     public struct Configuration: Sendable {
@@ -60,7 +59,6 @@ extension SystemMetricsMonitor {
     }
 }
 
-@available(macOS 13.0, iOS 16.0, watchOS 9.0, tvOS 16.0, *)
 extension SystemMetricsMonitor.Configuration {
     /// Labels for the reported System Metrics Data.
     ///
