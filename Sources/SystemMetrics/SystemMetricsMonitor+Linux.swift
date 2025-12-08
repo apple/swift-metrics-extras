@@ -132,11 +132,12 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             if line.starts(with: "btime"),
                 let systemUptimeInSecondsSinceEpochString =
                     line
+                    .lazy
                     .split(separator: " ")
                     .last?
                     .split(separator: "\n")
                     .first,
-                let systemUptimeInSecondsSinceEpoch = Int(systemUptimeInSecondsSinceEpochString)
+                let systemUptimeInSecondsSinceEpoch = Int(String(systemUptimeInSecondsSinceEpochString))
             {
                 return systemUptimeInSecondsSinceEpoch
             }
