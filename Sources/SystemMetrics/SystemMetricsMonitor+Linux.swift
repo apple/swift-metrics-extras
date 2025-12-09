@@ -198,8 +198,6 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             static let virtualMemoryBytes = 20
             static let residentMemoryBytes = 21
             static let startTimeTicks = 19
-            static let utimeTicks = 11
-            static let stimeTicks = 12
         }
 
         /// Some of the metrics from procfs need to be combined with system
@@ -217,15 +215,8 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             statFile.close()
         }
 
-        let uptimeFile = CFile("/proc/uptime")
-        uptimeFile.open()
-        defer {
-            uptimeFile.close()
-        }
-
         // Read both files as close as possible to each other to get an accurate CPU usage metric.
         let statFileContents = statFile.readFull()
-        let uptimeFileContents = uptimeFile.readFull()
 
         guard
             let statString =
@@ -239,15 +230,28 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         guard
             let virtualMemoryBytes = Int(stats[StatIndices.virtualMemoryBytes]),
             let rss = Int(stats[StatIndices.residentMemoryBytes]),
-            let startTimeTicks = Int(stats[StatIndices.startTimeTicks]),
-            let utimeTicks = Int(stats[StatIndices.utimeTicks]),
-            let stimeTicks = Int(stats[StatIndices.stimeTicks])
+            let startTimeTicks = Int(stats[StatIndices.startTimeTicks])
         else { return nil }
 
         let residentMemoryBytes = rss * SystemConfiguration.pageByteCount
         let processStartTimeInSeconds = startTimeTicks / SystemConfiguration.clockTicksPerSecond
-        let cpuTicks = utimeTicks + stimeTicks
-        let cpuSeconds = cpuTicks / SystemConfiguration.clockTicksPerSecond
+
+        var _rusage = rusage()
+        guard
+            withUnsafeMutablePointer(
+                to: &_rusage,
+                { ptr in
+                    #if canImport(Musl)
+                    getrusage(RUSAGE_SELF, ptr) == 0
+                    #else
+                    getrusage(__rusage_who_t(RUSAGE_SELF.rawValue), ptr) == 0
+                    #endif
+                }
+            )
+        else { return nil }
+        let cpuSecondsUser: Double = Double(_rusage.ru_utime.tv_sec) + Double(_rusage.ru_utime.tv_usec) / 1_000_000.0
+        let cpuSecondsSystem: Double = Double(_rusage.ru_stime.tv_sec) + Double(_rusage.ru_stime.tv_usec) / 1_000_000.0
+        let cpuSecondsTotal: Double = cpuSecondsUser + cpuSecondsSystem
 
         guard let systemStartTimeInSecondsSinceEpoch = Self.systemStartTimeInSecondsSinceEpoch else {
             return nil
@@ -281,7 +285,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             virtualMemoryBytes: virtualMemoryBytes,
             residentMemoryBytes: residentMemoryBytes,
             startTimeSeconds: startTimeInSecondsSinceEpoch,
-            cpuSeconds: cpuSeconds,
+            cpuSeconds: cpuSecondsTotal,
             maxFileDescriptors: maxFileDescriptors,
             openFileDescriptors: openFileDescriptors
         )

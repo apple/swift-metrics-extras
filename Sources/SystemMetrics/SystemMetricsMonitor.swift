@@ -256,7 +256,7 @@ extension SystemMetricsMonitor {
         /// Start time of the process since Unix epoch in seconds.
         package var startTimeSeconds: Int
         /// Total user and system CPU time spent in seconds.
-        package var cpuSeconds: Int
+        package var cpuSeconds: Double
         /// Maximum number of open file descriptors.
         package var maxFileDescriptors: Int
         /// Number of open file descriptors.
@@ -275,7 +275,7 @@ extension SystemMetricsMonitor {
             virtualMemoryBytes: Int,
             residentMemoryBytes: Int,
             startTimeSeconds: Int,
-            cpuSeconds: Int,
+            cpuSeconds: Double,
             maxFileDescriptors: Int,
             openFileDescriptors: Int
         ) {
