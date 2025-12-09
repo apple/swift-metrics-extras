@@ -17,50 +17,55 @@ import PackageDescription
 
 let package = Package(
     name: "swift-metrics-extras",
+    platforms: [.macOS(.v13), .iOS(.v16), .watchOS(.v9), .tvOS(.v16)],
     products: [
         .library(name: "SystemMetrics", targets: ["SystemMetrics"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2")
+        .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2"),
+        .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
+        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     ],
     targets: [
         .target(
             name: "SystemMetrics",
             dependencies: [
-                .product(name: "CoreMetrics", package: "swift-metrics")
+                .product(name: "CoreMetrics", package: "swift-metrics"),
+                .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
             ]
         ),
         .testTarget(
             name: "SystemMetricsTests",
             dependencies: [
-                "SystemMetrics"
+                "SystemMetrics",
+                .product(name: "MetricsTestKit", package: "swift-metrics"),
             ]
         ),
     ]
 )
 
-for target in package.targets {
+for target in package.targets
+where [.executable, .test, .regular].contains(
+    target.type
+) {
     var settings = target.swiftSettings ?? []
-    settings.append(.enableExperimentalFeature("StrictConcurrency=complete"))
 
-    // This is a workaround for `DispatchSourceTimer` crash with 6.0 toolchain
-    settings.append(.swiftLanguageMode(.v5))
+    // https://github.com/apple/swift-evolution/blob/main/proposals/0335-existential-any.md
+    // Require `any` for existential types.
+    settings.append(.enableUpcomingFeature("ExistentialAny"))
+
+    // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
+    settings.append(.enableUpcomingFeature("MemberImportVisibility"))
+
+    // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0409-access-level-on-imports.md
+    settings.append(.enableUpcomingFeature("InternalImportsByDefault"))
+
+    // https://docs.swift.org/compiler/documentation/diagnostics/nonisolated-nonsending-by-default/
+    settings.append(.enableUpcomingFeature("NonisolatedNonsendingByDefault"))
+
+    // Ensure all public types are explicitly annotated as Sendable or not Sendable.
+    settings.append(.unsafeFlags(["-Xfrontend", "-require-explicit-sendable"]))
 
     target.swiftSettings = settings
 }
-
-// ---    STANDARD CROSS-REPO SETTINGS DO NOT EDIT   --- //
-for target in package.targets {
-    switch target.type {
-    case .regular, .test, .executable:
-        var settings = target.swiftSettings ?? []
-        // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0444-member-import-visibility.md
-        settings.append(.enableUpcomingFeature("MemberImportVisibility"))
-        target.swiftSettings = settings
-    case .macro, .plugin, .system, .binary:
-        ()  // not applicable
-    @unknown default:
-        ()  // we don't know what to do here, do nothing
-    }
-}
-// --- END: STANDARD CROSS-REPO SETTINGS DO NOT EDIT --- //
