@@ -44,7 +44,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
@@ -53,7 +52,6 @@ struct SystemMetricsMonitorTests {
         #expect(labels.label(for: \.residentMemoryBytes) == "pfx+rmb")
         #expect(labels.label(for: \.startTimeSeconds) == "pfx+sts")
         #expect(labels.label(for: \.cpuSecondsTotal) == "pfx+cpt")
-        #expect(labels.label(for: \.cpuUsage) == "pfx+cpu")
         #expect(labels.label(for: \.maxFileDescriptors) == "pfx+mfd")
         #expect(labels.label(for: \.openFileDescriptors) == "pfx+ofd")
     }
@@ -66,7 +64,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
@@ -83,7 +80,6 @@ struct SystemMetricsMonitorTests {
         #expect(configuration.labels.label(for: \.residentMemoryBytes) == "pfx_rmb")
         #expect(configuration.labels.label(for: \.startTimeSeconds) == "pfx_sts")
         #expect(configuration.labels.label(for: \.cpuSecondsTotal) == "pfx_cpt")
-        #expect(configuration.labels.label(for: \.cpuUsage) == "pfx_cpu")
         #expect(configuration.labels.label(for: \.maxFileDescriptors) == "pfx_mfd")
         #expect(configuration.labels.label(for: \.openFileDescriptors) == "pfx_ofd")
 
@@ -102,7 +98,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: 2000,
             startTimeSeconds: 3000,
             cpuSeconds: 4000,
-            cpuUsage: 7.5,
             maxFileDescriptors: 5000,
             openFileDescriptors: 6000
         )
@@ -116,7 +111,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
@@ -147,9 +141,6 @@ struct SystemMetricsMonitorTests {
         let cptGauge = try testMetrics.expectGauge("test_cpt")
         #expect(cptGauge.lastValue == 4000)
 
-        let cpuGauge = try testMetrics.expectGauge("test_cpu")
-        #expect(cpuGauge.lastValue == 7.5)
-
         let mfdGauge = try testMetrics.expectGauge("test_mfd")
         #expect(mfdGauge.lastValue == 5000)
 
@@ -169,7 +160,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
@@ -187,7 +177,7 @@ struct SystemMetricsMonitorTests {
         )
 
         // Recorders are created along with the Monitor
-        #expect(testMetrics.recorders.count == 7)
+        #expect(testMetrics.recorders.count == 6)
 
         await monitor.updateMetrics()
 
@@ -205,7 +195,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: 2000,
             startTimeSeconds: 3000,
             cpuSeconds: 4000,
-            cpuUsage: 7.5,
             maxFileDescriptors: 5000,
             openFileDescriptors: 6000
         )
@@ -219,7 +208,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
@@ -271,7 +259,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: 2000,
             startTimeSeconds: 3000,
             cpuSeconds: 4000,
-            cpuUsage: 7.5,
             maxFileDescriptors: 5000,
             openFileDescriptors: 6000
         )
@@ -285,7 +272,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
@@ -330,7 +316,6 @@ struct SystemMetricsMonitorTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
@@ -378,7 +363,6 @@ struct SystemMetricsInitializationTests {
             residentMemoryBytes: 2000,
             startTimeSeconds: 3000,
             cpuSeconds: 4000,
-            cpuUsage: 7.5,
             maxFileDescriptors: 5000,
             openFileDescriptors: 6000
         )
@@ -391,7 +375,6 @@ struct SystemMetricsInitializationTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
@@ -426,7 +409,6 @@ struct SystemMetricsInitializationTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )
