@@ -253,7 +253,7 @@ extension SystemMetricsMonitor {
         package var virtualMemoryBytes: Int
         /// Resident memory size in bytes.
         package var residentMemoryBytes: Int
-        /// Start time of the process since unix epoch in seconds.
+        /// Start time of the process since Unix epoch in seconds.
         package var startTimeSeconds: Int
         /// Total user and system CPU time spent in seconds.
         package var cpuSeconds: Int
@@ -267,7 +267,7 @@ extension SystemMetricsMonitor {
         /// - parameters:
         ///     - virtualMemoryBytes: Virtual memory size in bytes
         ///     - residentMemoryBytes: Resident memory size in bytes.
-        ///     - startTimeSeconds: Total user and system CPU time spent in seconds.
+        ///     - startTimeSeconds: Process start time since Unix epoch in seconds.
         ///     - cpuSeconds: Total user and system CPU time spent in seconds.
         ///     - maxFileDescriptors: Maximum number of open file descriptors.
         ///     - openFileDescriptors: Number of open file descriptors.
