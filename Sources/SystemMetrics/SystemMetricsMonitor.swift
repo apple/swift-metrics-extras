@@ -55,7 +55,6 @@ public struct SystemMetricsMonitor: Service {
     let residentMemoryBytesGauge: Gauge
     let startTimeSecondsGauge: Gauge
     let cpuSecondsTotalGauge: Gauge
-    let cpuUsageGauge: Gauge
     let maxFileDescriptorsGauge: Gauge
     let openFileDescriptorsGauge: Gauge
 
@@ -96,11 +95,6 @@ public struct SystemMetricsMonitor: Service {
         )
         self.cpuSecondsTotalGauge = Gauge(
             label: configuration.labels.label(for: \.cpuSecondsTotal),
-            dimensions: configuration.dimensions,
-            factory: effectiveMetricsFactory
-        )
-        self.cpuUsageGauge = Gauge(
-            label: configuration.labels.label(for: \.cpuUsage),
             dimensions: configuration.dimensions,
             factory: effectiveMetricsFactory
         )
@@ -195,7 +189,6 @@ public struct SystemMetricsMonitor: Service {
                     "\(metrics.startTimeSeconds)"
                 ),
                 self.configuration.labels.cpuSecondsTotal.description: Logger.MetadataValue("\(metrics.cpuSeconds)"),
-                self.configuration.labels.cpuUsage.description: Logger.MetadataValue("\(metrics.cpuUsage)"),
                 self.configuration.labels.maxFileDescriptors.description: Logger.MetadataValue(
                     "\(metrics.maxFileDescriptors)"
                 ),
@@ -208,7 +201,6 @@ public struct SystemMetricsMonitor: Service {
         self.residentMemoryBytesGauge.record(metrics.residentMemoryBytes)
         self.startTimeSecondsGauge.record(metrics.startTimeSeconds)
         self.cpuSecondsTotalGauge.record(metrics.cpuSeconds)
-        self.cpuUsageGauge.record(metrics.cpuUsage)
         self.maxFileDescriptorsGauge.record(metrics.maxFileDescriptors)
         self.openFileDescriptorsGauge.record(metrics.openFileDescriptors)
     }
@@ -261,12 +253,10 @@ extension SystemMetricsMonitor {
         package var virtualMemoryBytes: Int
         /// Resident memory size in bytes.
         package var residentMemoryBytes: Int
-        /// Start time of the process since unix epoch in seconds.
+        /// Start time of the process since Unix epoch in seconds.
         package var startTimeSeconds: Int
         /// Total user and system CPU time spent in seconds.
-        package var cpuSeconds: Int
-        /// CPU usage percentage.
-        package var cpuUsage: Double
+        package var cpuSeconds: Double
         /// Maximum number of open file descriptors.
         package var maxFileDescriptors: Int
         /// Number of open file descriptors.
@@ -277,17 +267,15 @@ extension SystemMetricsMonitor {
         /// - parameters:
         ///     - virtualMemoryBytes: Virtual memory size in bytes
         ///     - residentMemoryBytes: Resident memory size in bytes.
-        ///     - startTimeSeconds: Total user and system CPU time spent in seconds.
+        ///     - startTimeSeconds: Process start time since Unix epoch in seconds.
         ///     - cpuSeconds: Total user and system CPU time spent in seconds.
-        ///     - cpuUsage: Total CPU usage percentage.
         ///     - maxFileDescriptors: Maximum number of open file descriptors.
         ///     - openFileDescriptors: Number of open file descriptors.
         package init(
             virtualMemoryBytes: Int,
             residentMemoryBytes: Int,
             startTimeSeconds: Int,
-            cpuSeconds: Int,
-            cpuUsage: Double,
+            cpuSeconds: Double,
             maxFileDescriptors: Int,
             openFileDescriptors: Int
         ) {
@@ -295,7 +283,6 @@ extension SystemMetricsMonitor {
             self.residentMemoryBytes = residentMemoryBytes
             self.startTimeSeconds = startTimeSeconds
             self.cpuSeconds = cpuSeconds
-            self.cpuUsage = cpuUsage
             self.maxFileDescriptors = maxFileDescriptors
             self.openFileDescriptors = openFileDescriptors
         }

@@ -33,18 +33,6 @@ struct LinuxDataProviderTests {
         #expect(metrics.openFileDescriptors != 0)
     }
 
-    @Test("CPU usage calculator accurately computes percentage")
-    func cpuUsageCalculator() throws {
-        let calculator = SystemMetricsMonitorDataProvider.CPUUsageCalculator()
-        var usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 0, cpuTicks: 0)
-        #expect(!usage.isNaN)
-        #expect(usage == 0)
-
-        usage = calculator.getUsagePercentage(ticksSinceSystemBoot: 20, cpuTicks: 10)
-        #expect(!usage.isNaN)
-        #expect(usage == 50)
-    }
-
     @Test("Resident memory bytes reflects actual allocations")
     func residentMemoryBytes() throws {
         let pageByteCount = sysconf(Int32(_SC_PAGESIZE))
@@ -117,7 +105,6 @@ struct LinuxDataProviderTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )

@@ -28,7 +28,6 @@ struct DarwinDataProviderTests {
             residentMemoryBytes: "rmb",
             startTimeSeconds: "sts",
             cpuSecondsTotal: "cpt",
-            cpuUsage: "cpu",
             maxFileDescriptors: "mfd",
             openFileDescriptors: "ofd"
         )

@@ -71,12 +71,10 @@ extension SystemMetricsMonitor.Configuration {
         package var virtualMemoryBytes: String = "virtual_memory_bytes"
         /// Label for resident memory size in bytes.
         package var residentMemoryBytes: String = "resident_memory_bytes"
-        /// Label for total user and system CPU time spent in seconds.
+        /// Label for process start time since Unix epoch in seconds.
         package var startTimeSeconds: String = "start_time_seconds"
         /// Label for total user and system CPU time spent in seconds.
         package var cpuSecondsTotal: String = "cpu_seconds_total"
-        /// Label for CPU usage percentage.
-        package var cpuUsage: String = "cpu_usage"
         /// Label for maximum number of open file descriptors.
         package var maxFileDescriptors: String = "max_fds"
         /// Label for number of open file descriptors.
@@ -99,20 +97,18 @@ extension SystemMetricsMonitor.Configuration {
         ///
         /// - Parameters:
         ///     - prefix: Prefix to prefix all other labels with.
-        ///     - virtualMemoryBytes: Lable for virtual memory size in bytes
-        ///     - residentMemoryBytes: Lable for resident memory size in bytes.
-        ///     - startTimeSeconds: Lable for total user and system CPU time spent in seconds.
-        ///     - cpuSecondsTotal: Lable for total user and system CPU time spent in seconds.
-        ///     - cpuUsage: Lable for total CPU usage percentage.
-        ///     - maxFileDescriptors: Lable for maximum number of open file descriptors.
-        ///     - openFileDescriptors: Lable for number of open file descriptors.
+        ///     - virtualMemoryBytes: Label for virtual memory size in bytes
+        ///     - residentMemoryBytes: Label for resident memory size in bytes.
+        ///     - startTimeSeconds: Label for process start time since Unix epoch in seconds.
+        ///     - cpuSecondsTotal: Label for total user and system CPU time spent in seconds.
+        ///     - maxFileDescriptors: Label for maximum number of open file descriptors.
+        ///     - openFileDescriptors: Label for number of open file descriptors.
         package init(
             prefix: String,
             virtualMemoryBytes: String,
             residentMemoryBytes: String,
             startTimeSeconds: String,
             cpuSecondsTotal: String,
-            cpuUsage: String,
             maxFileDescriptors: String,
             openFileDescriptors: String
         ) {
@@ -121,7 +117,6 @@ extension SystemMetricsMonitor.Configuration {
             self.residentMemoryBytes = residentMemoryBytes
             self.startTimeSeconds = startTimeSeconds
             self.cpuSecondsTotal = cpuSecondsTotal
-            self.cpuUsage = cpuUsage
             self.maxFileDescriptors = maxFileDescriptors
             self.openFileDescriptors = openFileDescriptors
         }

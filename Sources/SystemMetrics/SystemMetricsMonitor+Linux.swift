@@ -92,36 +92,6 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         }
     }
 
-    /// A type that can calculate CPU usage for a given process.
-    ///
-    /// CPU usage is calculated as the number of CPU ticks used by this process between measurements.
-    /// - Note: the first measurement will be calculated since the process' start time, since there's no
-    /// previous measurement to take as reference.
-    package final class CPUUsageCalculator: @unchecked Sendable {
-        /// The number of ticks after system boot that the last CPU usage stat was taken.
-        private var locked_previousTicksSinceSystemBoot: Int = 0
-        /// The number of ticks the process actively used the CPU for, as of the previous CPU usage measurement.
-        private var locked_previousCPUTicks: Int = 0
-
-        public init() {}
-
-        public func getUsagePercentage(ticksSinceSystemBoot: Int, cpuTicks: Int) -> Double {
-            MetricsSystem.withWriterLock {
-                defer {
-                    self.locked_previousTicksSinceSystemBoot = ticksSinceSystemBoot
-                    self.locked_previousCPUTicks = cpuTicks
-                }
-                let ticksBetweenMeasurements = ticksSinceSystemBoot - self.locked_previousTicksSinceSystemBoot
-                guard ticksBetweenMeasurements > 0 else {
-                    return 0
-                }
-
-                let cpuTicksBetweenMeasurements = cpuTicks - self.locked_previousCPUTicks
-                return Double(cpuTicksBetweenMeasurements) * 100 / Double(ticksBetweenMeasurements)
-            }
-        }
-    }
-
     private static let systemStartTimeInSecondsSinceEpoch: Int? = {
         let systemStatFile = CFile("/proc/stat")
         systemStatFile.open()
@@ -144,8 +114,6 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         }
         return nil
     }()
-
-    private static let cpuUsageCalculator = CPUUsageCalculator()
 
     /// Collect current system metrics data.
     ///
@@ -230,8 +198,6 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             static let virtualMemoryBytes = 20
             static let residentMemoryBytes = 21
             static let startTimeTicks = 19
-            static let utimeTicks = 11
-            static let stimeTicks = 12
         }
 
         /// Some of the metrics from procfs need to be combined with system
@@ -249,15 +215,8 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             statFile.close()
         }
 
-        let uptimeFile = CFile("/proc/uptime")
-        uptimeFile.open()
-        defer {
-            uptimeFile.close()
-        }
-
         // Read both files as close as possible to each other to get an accurate CPU usage metric.
         let statFileContents = statFile.readFull()
-        let uptimeFileContents = uptimeFile.readFull()
 
         guard
             let statString =
@@ -271,33 +230,33 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         guard
             let virtualMemoryBytes = Int(stats[StatIndices.virtualMemoryBytes]),
             let rss = Int(stats[StatIndices.residentMemoryBytes]),
-            let startTimeTicks = Int(stats[StatIndices.startTimeTicks]),
-            let utimeTicks = Int(stats[StatIndices.utimeTicks]),
-            let stimeTicks = Int(stats[StatIndices.stimeTicks])
+            let startTimeTicks = Int(stats[StatIndices.startTimeTicks])
         else { return nil }
 
         let residentMemoryBytes = rss * SystemConfiguration.pageByteCount
         let processStartTimeInSeconds = startTimeTicks / SystemConfiguration.clockTicksPerSecond
-        let cpuTicks = utimeTicks + stimeTicks
-        let cpuSeconds = cpuTicks / SystemConfiguration.clockTicksPerSecond
+
+        var _rusage = rusage()
+        guard
+            withUnsafeMutablePointer(
+                to: &_rusage,
+                { ptr in
+                    #if canImport(Musl)
+                    getrusage(RUSAGE_SELF, ptr) == 0
+                    #else
+                    getrusage(__rusage_who_t(RUSAGE_SELF.rawValue), ptr) == 0
+                    #endif
+                }
+            )
+        else { return nil }
+        let cpuSecondsUser: Double = Double(_rusage.ru_utime.tv_sec) + Double(_rusage.ru_utime.tv_usec) / 1_000_000.0
+        let cpuSecondsSystem: Double = Double(_rusage.ru_stime.tv_sec) + Double(_rusage.ru_stime.tv_usec) / 1_000_000.0
+        let cpuSecondsTotal: Double = cpuSecondsUser + cpuSecondsSystem
 
         guard let systemStartTimeInSecondsSinceEpoch = Self.systemStartTimeInSecondsSinceEpoch else {
             return nil
         }
         let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
-
-        var cpuUsage: Double = 0
-        if cpuTicks > 0 {
-            guard let uptimeString = uptimeFileContents.split(separator: " ").first,
-                let uptimeSeconds = Float(uptimeString),
-                uptimeSeconds.isFinite
-            else { return nil }
-            let uptimeTicks = Int(ceilf(uptimeSeconds)) * SystemConfiguration.clockTicksPerSecond
-            cpuUsage = Self.cpuUsageCalculator.getUsagePercentage(
-                ticksSinceSystemBoot: uptimeTicks,
-                cpuTicks: cpuTicks
-            )
-        }
 
         var _rlim = rlimit()
         guard
@@ -326,8 +285,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             virtualMemoryBytes: virtualMemoryBytes,
             residentMemoryBytes: residentMemoryBytes,
             startTimeSeconds: startTimeInSecondsSinceEpoch,
-            cpuSeconds: cpuSeconds,
-            cpuUsage: cpuUsage,
+            cpuSeconds: cpuSecondsTotal,
             maxFileDescriptors: maxFileDescriptors,
             openFileDescriptors: openFileDescriptors
         )
