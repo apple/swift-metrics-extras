@@ -12,6 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+import AsyncAlgorithms
 import Logging
 import Metrics
 import MetricsTestKit
@@ -25,7 +26,15 @@ struct FooService: Service {
 
     func run() async throws {
         self.logger.notice("FooService starting")
-        try await Task.sleep(for: .seconds(30))
+        for await _ in AsyncTimerSequence(interval: .seconds(0.01), clock: .continuous)
+            .cancelOnGracefulShutdown()
+        {
+            let j = 42
+            for i in 0...1000 {
+                let k = i * j
+                self.logger.trace("FooService is still running", metadata: ["k": "\(k)"])
+            }
+        }
         self.logger.notice("FooService done")
     }
 }
