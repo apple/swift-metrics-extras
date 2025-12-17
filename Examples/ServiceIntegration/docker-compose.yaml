@@ -1,0 +1,28 @@
+version: "3.5"
+services:
+  systemmetricsmonitor:
+    build:
+      context: ../..
+      dockerfile: Examples/ServiceIntegration/Dockerfile
+    environment:
+      LOG_LEVEL: debug
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://grafana:4317
+    ports:
+      - "8080:8080"
+    depends_on:
+      - grafana
+
+  grafana:
+    image: grafana/otel-lgtm:latest
+    environment:
+      - GF_PATHS_DATA=/data/grafana
+    volumes:
+      - ./grafana/provisioning/dashboards/service-process-metrics-dashboard.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/service-process-metrics-dashboard.yaml
+      - ./grafana/provisioning/dashboards/grafana-dashboard-service-process-metrics.json:/otel-lgtm/grafana-dashboard-service-process-metrics.json
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+      - "4318:4318"
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
