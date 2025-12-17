@@ -15,6 +15,7 @@
 import Logging
 import Metrics
 import MetricsTestKit
+import OTel
 import ServiceLifecycle
 import SystemMetrics
 import UnixSignals
@@ -32,16 +33,15 @@ struct FooService: Service {
 @main
 struct Application {
     static func main() async throws {
-        var logger = Logger(label: "Application")
-
-        // Let's see some logs from the SystemMetricsMonitor
-        // while the FooService is running
-        logger.logLevel = .trace
+        let logger = Logger(label: "Application")
 
         // Bootstrap with some custom metrics backend
-        let testMetrics = TestMetrics()
-        MetricsSystem.bootstrap(testMetrics)
+        var otelConfig = OTel.Configuration.default
+        otelConfig.logs.enabled = false
+        otelConfig.serviceName = "ServiceIntegrationExample"
+        let otelService = try OTel.bootstrap(configuration: otelConfig)
 
+        // Create a service simulating some important work
         let service = FooService(logger: logger)
         let systemMetricsMonitor = SystemMetricsMonitor(
             configuration: .init(pollInterval: .seconds(5)),
@@ -49,7 +49,7 @@ struct Application {
         )
 
         let serviceGroup = ServiceGroup(
-            services: [service, systemMetricsMonitor],
+            services: [service, systemMetricsMonitor, otelService],
             gracefulShutdownSignals: [.sigint],
             cancellationSignals: [.sigterm],
             logger: logger
