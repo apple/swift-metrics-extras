@@ -335,8 +335,10 @@ struct SystemMetricsMonitorTests {
         await monitor.updateMetrics()
         let vmbGauge = try testMetrics.expectGauge("test_vmb")
 
+        #if os(macOS) || os(Linux)
         let lastValue = try #require(vmbGauge.lastValue)
         #expect(lastValue > 0)
+        #endif
     }
 }
 
@@ -422,7 +424,9 @@ struct SystemMetricsInitializationTests {
         await monitor.updateMetrics()
         let vmbGauge = try testMetrics.expectGauge("default_vmb")
 
+        #if os(macOS) || os(Linux)
         let lastValue = try #require(vmbGauge.lastValue)
         #expect(lastValue > 0)
+        #endif
     }
 }

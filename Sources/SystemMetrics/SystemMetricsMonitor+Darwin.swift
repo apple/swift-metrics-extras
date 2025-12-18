@@ -18,20 +18,29 @@ import Darwin
 extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     /// Collect current system metrics data.
     ///
-    /// On Darwin, this delegates to the static `darwinSystemMetrics()` function.
+    /// On supported Darwin platforms, this delegates to the static
+    /// `darwinSystemMetrics()` function.
     ///
+    /// - Note: System metrics collection is not yet implemented for Darwin-based
+    ///         platforms other than macOS. This method always returns `nil` on
+    ///         other platforms.
     /// - Returns: Current system metrics, or `nil` if collection failed.
     package func data() async -> SystemMetricsMonitor.Data? {
+        #if os(macOS)
         Self.darwinSystemMetrics()
+        #else
+        #warning("System metrics are not yet implemented for platforms other than macOS and Linux.")
+        return nil
+        #endif
     }
 
+    #if os(macOS)
     /// Collect system metrics data on Darwin hosts.
     ///
     /// This function reads process statistics using system APIs to produce
     /// a complete snapshot of the process's resource usage.
     ///
-    /// - Returns: A `Data` struct containing all collected metrics, or `nil` if
-    ///            metrics could not be collected.
+    /// - Returns: Collected metrics, or `nil` if collection failed.
     package static func darwinSystemMetrics() -> SystemMetricsMonitor.Data? {
         guard let taskInfo = ProcessTaskInfo.snapshot() else { return nil }
         guard let fileCounts = FileDescriptorCounts.snapshot() else { return nil }
@@ -62,10 +71,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         )
     }
 
-    /// Converts Mach absolute time ticks to nanoseconds.
-    ///
-    /// This ratio is determined by the CPU architecture and is used
-    /// to convert CPU time measurements from hardware ticks to nanoseconds.
+    /// Ratio for converting Mach absolute time ticks to nanoseconds.
     private static let machTimebaseRatio: Double = {
         var info = mach_timebase_info_data_t()
         let result = mach_timebase_info(&info)
@@ -140,5 +146,6 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             return info
         }
     }
+    #endif
 }
 #endif
