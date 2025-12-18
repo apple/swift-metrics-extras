@@ -28,6 +28,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-metrics.git", from: "2.3.2"),
         .package(url: "https://github.com/swift-server/swift-service-lifecycle.git", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+        .package(url: "https://github.com/swift-otel/swift-otel", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-async-algorithms", from: "1.0.0"),
     ],
     targets: [
         .executableTarget(
@@ -39,6 +41,8 @@ let package = Package(
                 .product(name: "ServiceLifecycle", package: "swift-service-lifecycle"),
                 .product(name: "UnixSignals", package: "swift-service-lifecycle"),
                 .product(name: "Logging", package: "swift-log"),
+                .product(name: "OTel", package: "swift-otel"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
             ],
             path: "Sources"
         )
