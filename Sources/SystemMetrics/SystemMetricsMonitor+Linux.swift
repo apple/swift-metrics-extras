@@ -93,6 +93,8 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
     }
 
     private static let systemStartTimeInSecondsSinceEpoch: Int? = {
+        // Read system boot time from /proc/stat btime field
+        // This provides the Unix timestamp when the system was booted
         let systemStatFile = CFile("/proc/stat")
         systemStatFile.open()
         defer {
@@ -124,11 +126,20 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         Self.linuxSystemMetrics()
     }
 
-    /// Collect system metrics data on Linux by reading `/proc` filesystem.
+    /// Collect system metrics data on Linux using multiple system APIs and interfaces.
     ///
-    /// This function reads process statistics from `/proc/self/stat` and system
-    /// uptime from `/proc/uptime`, then combines them with resource limits to
-    /// produce a complete snapshot of the process's resource usage.
+    /// This function combines data from several Linux system interfaces to calculate
+    /// process metrics:
+    ///
+    /// Data Sources:
+    ///
+    /// - `/proc/stat` - System boot time
+    /// - `sysconf(_SC_CLK_TCK)` - System clock ticks per second for time conversion
+    /// - `sysconf(_SC_PAGESIZE)` - System page size for memory conversion
+    /// - `/proc/self/stat` - Process memory usage and start time
+    /// - `getrusage(RUSAGE_SELF)` - CPU time
+    /// - `getrlimit(RLIMIT_NOFILE)` - Maximum file descriptors limit
+    /// - `/proc/self/fd/` directory enumeration - Count of open file descriptors
     ///
     /// - Returns: A `Data` struct containing all collected metrics, or `nil` if
     ///            metrics could not be collected (e.g., due to file read errors).
@@ -156,21 +167,6 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         ///         (including the terminating null byte) are silently
         ///         truncated.  This is visible whether or not the
         ///         executable is swapped out.
-        /// ...
-        ///
-        ///  (14) utime  %lu
-        ///         Amount of time that this process has been scheduled
-        ///         in user mode, measured in clock ticks (divide by
-        ///         sysconf(_SC_CLK_TCK)).  This includes guest time,
-        ///         guest_time (time spent running a virtual CPU, see
-        ///         below), so that applications that are not aware of
-        ///         the guest time field do not lose that time from
-        ///         their calculations.
-        ///
-        ///  (15) stime  %lu
-        ///         Amount of time that this process has been scheduled
-        ///         in kernel mode, measured in clock ticks (divide by
-        ///         sysconf(_SC_CLK_TCK)).
         ///
         /// ...
         ///
@@ -200,10 +196,9 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             static let startTimeTicks = 19
         }
 
-        /// Some of the metrics from procfs need to be combined with system
-        /// values, which we obtain from sysconf(3). These values do not change
-        /// during the lifetime of the process so we define them as static
-        /// members here.
+        /// Use sysconf to get system configuration values that do not change
+        /// during the lifetime of the process. They are used later to convert
+        /// ticks into seconds and memory pages into total bytes.
         enum SystemConfiguration {
             static let clockTicksPerSecond = sysconf(Int32(_SC_CLK_TCK))
             static let pageByteCount = sysconf(Int32(_SC_PAGESIZE))
@@ -215,7 +210,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
             statFile.close()
         }
 
-        // Read both files as close as possible to each other to get an accurate CPU usage metric.
+        // Read /proc/self/stat to get process memory and timing statistics
         let statFileContents = statFile.readFull()
 
         guard
@@ -236,6 +231,8 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         let residentMemoryBytes = rss * SystemConfiguration.pageByteCount
         let processStartTimeInSeconds = startTimeTicks / SystemConfiguration.clockTicksPerSecond
 
+        // Use getrusage(RUSAGE_SELF) system call to get CPU time consumption
+        // This provides both user and system time spent by this process
         var _rusage = rusage()
         guard
             withUnsafeMutablePointer(
@@ -258,6 +255,7 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
         }
         let startTimeInSecondsSinceEpoch = systemStartTimeInSecondsSinceEpoch + processStartTimeInSeconds
 
+        // Use getrlimit(RLIMIT_NOFILE) system call to get file descriptor limits
         var _rlim = rlimit()
         guard
             withUnsafeMutablePointer(
@@ -274,6 +272,8 @@ extension SystemMetricsMonitorDataProvider: SystemMetricsProvider {
 
         let maxFileDescriptors = Int(_rlim.rlim_max)
 
+        // Count open file descriptors by enumerating /proc/self/fd directory
+        // Each entry represents an open file descriptor for this process
         guard let dir = opendir("/proc/self/fd") else { return nil }
         defer {
             closedir(dir)
