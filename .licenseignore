@@ -33,3 +33,4 @@ Dockerfile
 Snippets/*
 dev/git.commit.template
 .unacceptablelanguageignore
+Scripts/*
