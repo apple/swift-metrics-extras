@@ -17,7 +17,7 @@ The following metrics are collected:
 - **Max File Descriptors**: Maximum number of file descriptors the process can open, reported as `process_max_fds`.
 - **Open File Descriptors**: Number of file descriptors currently open, reported as `process_open_fds`.
 
-> Note: These metrics are currently implemented on Linux platforms only.
+> Note: These metrics are currently implemented on Linux and macOS platforms only.
 
 ## Getting started
 
