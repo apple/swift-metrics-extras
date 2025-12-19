@@ -170,7 +170,7 @@ struct DarwinDataProviderTests {
     /// - Returns: The current system metrics data.
     /// - Throws: If metrics collection fails or returns `nil`.
     private func readMetrics() throws -> SystemMetricsMonitor.Data {
-        return try #require(SystemMetricsMonitorDataProvider.darwinSystemMetrics())
+        try #require(SystemMetricsMonitorDataProvider.darwinSystemMetrics())
     }
 
     /// Reads a specific metric value for the given key path.
